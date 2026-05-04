@@ -1,5 +1,5 @@
 # Contact
-Anirudhan Vijaykrishnan. Email: anirudhanvijay@gmail.com. GitHub: github.com/anirudhan25. LinkedIn: linkedin.com/in/anirudhan-vijay. Bilingual: English and Tamil.
+Anirudhan Vijaykrishnan. Email: anirudhanvijay@gmail.com. GitHub: github.com/anirudhan25. LinkedIn: linkedin.com/in/anirudhan-vijay. Languages spoken: English and Tamil (bilingual, native in both).
 
 # Education
 MEng Computer Science, University of Southampton (Sep 2023–present, projected First-Class Honours, graduating 2027). Hills Road Sixth Form, Cambridge — Maths, CS, Physics, EPQ, grades A*A*AA (2021–2023).
