@@ -32,17 +32,25 @@
 		box-sizing: border-box;
 	}
 
-	html {
-		/* Set to 100% to ensure 1:1 scaling */
-		font-size: 95%;
-		background:
-			radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
-			radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
-			radial-gradient(ellipse at 50% 50%, #f8f2e2 0%, transparent 80%),
-			#f2ead8;
-		min-height: 100vh;
-		overflow-x: hidden;
-	}
+		html {
+			/* 1. REMOVE the zoom property completely */
+	
+			/* 2. Rely solely on font-size to scale the rem units down safely */
+			font-size: 90% !important;
+	
+			/* 3. Add this to stop Safari from auto-zooming text on mobile */
+			-webkit-text-size-adjust: 100%;
+	
+			/* Keep your existing background */
+			background:
+				radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
+				radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
+				radial-gradient(ellipse at 50% 50%, #f8f2e2 0%, transparent 80%),
+				#f2ead8 !important;
+	
+			min-height: 100vh;
+			overflow-x: hidden;
+		}
 
 	@media (max-width: 819px) {
 		html {
