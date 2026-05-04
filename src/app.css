@@ -107,15 +107,6 @@ body::after {
 }
 
 .page-count {
-	position: fixed;
-	/* Pins it to the screen viewport */
-	bottom: 8rem;
-	/* Distance from very bottom */
-	right: 33.5rem;
-	/* Distance from very right */
-	z-index: 100;
-	/* Keep it above everything else */
-
 	font-family: 'EB Garamond', Georgia, serif;
 	font-size: 1rem;
 	letter-spacing: 0.15em;
@@ -123,6 +114,12 @@ body::after {
 	opacity: 0.55;
 	margin: 0;
 	padding: 0;
+}
+
+@media (max-width: 819px) {
+	.page-count {
+		display: none;
+	}
 }
 
 /* ── headings ── */
@@ -257,32 +254,38 @@ nav.folio-nav a:hover {
 	opacity: 0.85;
 }
 
-/* ── footer divider ── */
+/* ── inline page footer ── */
+.page-footer {
+	margin-top: 3rem;
+	flex-shrink: 0;
+}
+
 .footer-rule {
-	position: fixed;
-	bottom: 9.6rem;
-	left: 33.5rem;
-	right: 33.5rem;
+	width: 100%;
+	display: block;
 	height: 1px;
 	background: var(--ink-fade);
 	opacity: 0.35;
-	z-index: 100;
 	pointer-events: none;
+	margin-bottom: 1.5rem;
+}
+
+.footer-row {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
 }
 
 @media (max-width: 819px) {
 	.footer-rule {
-		left: 1.5rem;
-		right: 1.5rem;
+		/* keep full-width inline divider on mobile */
 	}
 }
 
 /* ── mic button ── */
 .mic-btn {
-	position: fixed;
-	bottom: 7.8rem;
-	left: 33.5rem;
-	z-index: 100;
 	background: none;
 	border: none;
 	cursor: pointer;

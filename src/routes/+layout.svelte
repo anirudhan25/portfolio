@@ -12,10 +12,12 @@
 
 <div class="vignette"></div>
 
-<main style="max-width: 580px; margin: 0 auto; padding: 4rem 2.5rem 14rem; position: relative; overflow: visible;">
-	{#key $page.url.pathname}
-		<div in:fade={{ duration: 250, delay: 80 }}>
-			{@render children()}
-		</div>
-	{/key}
-</main>
+<div style="min-height: 100vh; display: flex; flex-direction: column;">
+	<main style="flex: 1; display: flex; flex-direction: column; max-width: 580px; width: 100%; margin: 0 auto; padding: 4rem 2.5rem 2rem; position: relative; overflow: visible;">
+		{#key $page.url.pathname}
+			<div in:fade={{ duration: 250, delay: 80 }} style="flex: 1; display: flex; flex-direction: column;">
+				{@render children()}
+			</div>
+		{/key}
+	</main>
+</div>

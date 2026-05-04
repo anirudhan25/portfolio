@@ -316,6 +316,7 @@
   }
 </script>
 
+<div style="flex: 1;">
 <p class="page-num">I</p>
 
 <!-- left margin: social links -->
@@ -397,7 +398,6 @@
     <a class="margin-link" href="/projects">Projects</a>
     <a class="margin-link" href="/blog">Blog</a>
     <span class="margin-desc">check out my other work & writing</span>
-    <span class="page-count">page 1 of 3</span>
   </div>
 </div>
 
@@ -454,29 +454,37 @@
   {/if}
 </div>
 
-<div class="footer-rule"></div>
+</div>
 
-{#if speechSupported}
-  <button
-    class="mic-btn {isListening ? 'mic-btn--listening' : ''}"
-    onclick={toggleListening}
-    aria-label={isListening ? "Stop listening" : "Start voice input"}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="32"
-      height="32"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <rect x="9" y="2" width="6" height="11" rx="3" />
-      <path d="M5 10a7 7 0 0 0 14 0" />
-      <line x1="12" y1="17" x2="12" y2="21" />
-      <line x1="9" y1="21" x2="15" y2="21" />
-    </svg>
-  </button>
-{/if}
+<footer class="page-footer">
+  <div class="footer-rule"></div>
+  <div class="footer-row">
+    {#if speechSupported}
+      <button
+        class="mic-btn {isListening ? 'mic-btn--listening' : ''}"
+        onclick={toggleListening}
+        aria-label={isListening ? "Stop listening" : "Start voice input"}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="9" y="2" width="6" height="11" rx="3" />
+          <path d="M5 10a7 7 0 0 0 14 0" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+          <line x1="9" y1="21" x2="15" y2="21" />
+        </svg>
+      </button>
+    {:else}
+      <span></span>
+    {/if}
+    <span class="page-count">page 1 of 3</span>
+  </div>
+</footer>
