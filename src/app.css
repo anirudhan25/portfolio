@@ -1,0 +1,465 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Fuzzy+Bubbles:wght@400;700&family=Special+Elite&display=swap');
+@import 'tailwindcss';
+
+@font-face {
+	font-family: 'IM Fell DW Pica';
+	src: url('/fonts/IMFellDWPica-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'IM Fell DW Pica';
+	src: url('/fonts/IMFellDWPica-Italic.ttf') format('truetype');
+	font-weight: 400;
+	font-style: italic;
+}
+
+:root {
+	--paper:      #eeede7;
+	--ink:        #1c1008;
+	--ink-mid:    #3d2b18;
+	--ink-fade:   #6b5240;
+	--accent:     #c91616;
+}
+
+* { box-sizing: border-box; }
+
+html {
+	font-size: 108%;
+	/* uneven paper base — slight warmth variation across the page */
+	background:
+		radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
+		radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
+		radial-gradient(ellipse at 50% 50%, #f8f2e2 0%, transparent 80%),
+		#f2ead8;
+	min-height: 100vh;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	color: var(--ink);
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 22px;
+	line-height: 1.85;
+	min-height: 100vh;
+	position: relative;
+}
+
+/* raised cap — inline, so baseline aligns naturally with the rest of the line */
+.diary-response::first-letter {
+	font-size: 2em;
+	font-weight: bold;
+	margin-right: 0.04em;
+	line-height: 1;
+}
+
+/* rough paper grain — two layers at different scales */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: 0.18;
+	/* fine grain */
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85 0.75' numOctaves='6' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23g)'/%3E%3C/svg%3E");
+	background-size: 400px 400px;
+}
+
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: 0.12;
+	/* coarse fibre layer */
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.18 0.12' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url(%23f)'/%3E%3C/svg%3E");
+	background-size: 600px 600px;
+}
+
+/* vignette sits above texture layers */
+.vignette {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background: radial-gradient(ellipse at center, transparent 55%, rgba(28,16,8,0.13) 100%);
+}
+
+#app, [data-sveltekit-body] {
+	position: relative;
+	z-index: 1;
+}
+
+/* ── page number ── */
+.page-num {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 1.9rem;
+	letter-spacing: 0.15em;
+	color: var(--ink-fade);
+	text-align: center;
+	opacity: 0.55;
+	margin-bottom: 3.5rem;
+}
+
+.page-count {
+	position: fixed;
+	/* Pins it to the screen viewport */
+	bottom: 8rem;
+	/* Distance from very bottom */
+	right: 33.5rem;
+	/* Distance from very right */
+	z-index: 100;
+	/* Keep it above everything else */
+
+	font-family: 'EB Garamond', Georgia, serif;
+	font-size: 1rem;
+	letter-spacing: 0.15em;
+	color: var(--ink-fade);
+	opacity: 0.55;
+	margin: 0;
+	padding: 0;
+}
+
+/* ── headings ── */
+h1.folio-name {
+	font-family: 'EB Garamond', Georgia, serif;
+	font-size: clamp(2.6rem, 6vw, 3.8rem);
+	font-weight: 400;
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+	color: var(--ink);
+	margin: 0 0 0.35rem 0;
+	text-align: center;
+}
+
+.folio-sub {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-style: italic;
+	font-size: 1.05rem;
+	color: var(--ink-fade);
+	letter-spacing: 0.01em;
+	text-align: center;
+}
+
+/* .folio-intro {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 1.2rem;
+	line-height: 1.9;
+	color: var(--ink-mid);
+	margin: 0;
+} */
+
+/* Updated to match diary-response */
+.folio-intro {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	color: var(--ink);
+	font-size: 1.25rem;
+	line-height: 1.85;
+	margin: 0;
+	white-space: normal;
+}
+
+.folio-intro::first-letter {
+	font-size: 2em;
+	font-weight: bold;
+	margin-right: 0.04em;
+	line-height: 1;
+}
+
+/* ── nav ── */
+nav.folio-nav {
+	display: flex;
+	gap: 2rem;
+}
+
+nav.folio-nav a {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 1.05rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--ink-fade);
+	text-decoration: none;
+	transition: color 0.2s;
+}
+
+nav.folio-nav a:hover {
+	color: var(--ink);
+}
+
+/* ── diary response ── */
+.diary-response {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	color: var(--ink);
+	font-size: 1.25rem;
+	line-height: 1.85;
+	white-space: pre-wrap;
+	transition: opacity 1.5s ease;
+}
+
+.diary-response.fading {
+	opacity: 0;
+}
+
+/* ── response title & placeholder heading (shared style) ── */
+.response-title,
+.placeholder-heading {
+	font-family: 'EB Garamond', Georgia, serif;
+	font-size: 2.0rem;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0 0 0.25rem 0;
+	text-align: left;
+	line-height: 1.2;
+	transition: opacity 1.5s ease;
+}
+
+.response-title.fading {
+	opacity: 0;
+}
+
+/* ── placeholder heading transitions ── */
+.placeholder-heading {
+	transition: opacity 0.5s ease;
+}
+
+.placeholder-heading--fading {
+	opacity: 0;
+}
+
+.placeholder-heading--hidden {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.placeholder-input-wrapper {
+	min-height: 0;
+}
+
+/* ── character counter ── */
+.char-counter {
+	display: block;
+	text-align: right;
+	font-family: 'EB Garamond', Georgia, serif;
+	font-size: 0.75rem;
+	color: var(--ink-fade);
+	opacity: 0.5;
+	margin-top: 0.2rem;
+	transition: color 0.2s, opacity 0.2s;
+}
+
+.char-counter--warning {
+	color: var(--accent);
+	opacity: 0.85;
+}
+
+/* ── mic button ── */
+.mic-btn {
+	position: fixed;
+	bottom: 7.8rem;
+	left: 33.5rem;
+	z-index: 100;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	color: var(--ink-fade);
+	opacity: 0.70;
+	transition: opacity 0.2s, color 0.2s;
+	line-height: 0;
+}
+
+.mic-btn:hover {
+	opacity: 0.8;
+}
+
+.mic-btn--listening {
+	color: var(--accent);
+	opacity: 1;
+	animation: mic-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+	0%, 100% { opacity: 0.7; }
+	50%       { opacity: 1;   }
+}
+
+/* ── navigation dissolve ── */
+.nav-dissolve {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.6s ease;
+}
+
+/* ── nav phrase ── */
+.nav-phrase {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 1.55rem;
+	color: var(--ink-fade);
+	margin-top: 1.5rem;
+	line-height: 1.3;
+	transition: opacity 0.8s ease;
+}
+
+.nav-phrase.fading {
+	opacity: 0;
+}
+
+/* ── morphing loader ── */
+.morph-char {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 1.2rem;
+	color: var(--ink);
+	opacity: 0.4;
+	display: inline-block;
+	min-width: 1ch;
+}
+
+.diary-input {
+	width: 100%;
+	background: transparent;
+	border: none;
+	border-bottom: none;
+	outline: none;
+	resize: none;
+	font-family: 'EB Garamond', Georgia, serif;
+	font-size: 1.4rem;
+	line-height: 1.7;
+	color: var(--ink);
+	caret-color: rgba(28,16,8,0.3);
+	padding: 0.25rem 0;
+}
+
+.diary-input::placeholder {
+	color: var(--ink-mid);
+	opacity: 0.65;
+	font-size: 1.4rem;
+	transition: opacity 0.5s ease;
+}
+
+.diary-input.placeholder-fade::placeholder {
+	opacity: 0;
+}
+
+/* ── contact links ── */
+.folio-contact {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	font-size: 0.85rem;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--ink-fade);
+	text-decoration: none;
+	transition: color 0.2s;
+	text-align: center;
+}
+
+.folio-contact:hover {
+	color: var(--ink);
+}
+
+/* ── chrome nav (back links, ui labels) ── */
+.folio-chrome {
+	font-family: 'Fuzzy Bubbles', cursive;
+	font-weight: 700;
+	font-size: 1.0rem;
+	color: var(--accent);
+	text-decoration: none;
+	display: inline-block;
+	transition: opacity 0.2s;
+}
+
+.folio-chrome:hover {
+	opacity: 0.6;
+}
+
+/* ── margin notes ── */
+.margin-note {
+	display: none;
+	position: absolute;
+	font-family: 'Fuzzy Bubbles', cursive;
+	color: var(--accent);
+	font-size: 1rem;
+	line-height: 1.9;
+	flex-direction: column;
+}
+
+.margin-note--left {
+	right: calc(100% + 1.2rem);
+	width: 120px;
+	text-align: right;
+	align-items: flex-end;
+	transform: rotate(-2.5deg);
+}
+
+.margin-note--right {
+	left: calc(100% + 1.2rem);
+	width: 120px;
+	text-align: left;
+	align-items: flex-start;
+	position: absolute;
+	margin-top: -5.5rem;
+}
+
+.margin-link {
+	font-family: 'Fuzzy Bubbles', cursive;
+	font-weight: 700;
+	font-size: 1.2rem;
+	color: var(--accent);
+	text-decoration: none;
+	display: block;
+	transition: opacity 0.2s;
+}
+
+.margin-link:hover {
+	opacity: 0.6;
+}
+
+.margin-desc {
+	font-family: 'Fuzzy Bubbles', cursive;
+	font-weight: 400;
+	font-size: 0.85rem;
+	color: var(--accent);
+	opacity: 0.7;
+	display: block;
+	margin-top: 0.25rem;
+	line-height: 1.4;
+}
+
+/* ── handwritten underline ── */
+.handline {
+	position: relative;
+	display: inline;
+}
+
+.handline::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -3px;
+	height: 6px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='7' viewBox='0 0 220 7'%3E%3Cpath d='M 0 5 C 25 2, 55 7, 90 4 C 125 1, 158 6, 190 3 C 205 2, 213 4, 220 3' stroke='%23c41717' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+	background-size: 100% 100%;
+	background-repeat: no-repeat;
+	pointer-events: none;
+}
+
+.mobile-only { display: flex; }
+
+@media (min-width: 820px) {
+	.margin-note { display: flex; }
+	.mobile-only  { display: none !important; }
+}
+
+.paper-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+
+	filter: grayscale(100%) sepia(20%) contrast(0.9) brightness(0.95);
+	mix-blend-mode: multiply;
+}
