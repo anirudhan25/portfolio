@@ -42,6 +42,9 @@
   let navPhraseFading = $state(false);
   let fadeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  let streaming = $state(false); // true while SSE stream is running; blocks concurrent submits
+  let streamGen = 0;             // bumped on each submit; old stream self-cancels when stale
+
   let inputHistory: string[] = [];
   let historyIndex = -1;
   let inputDraft = "";
@@ -172,15 +175,15 @@
 
   async function submit() {
     const query = input.trim();
-    if (!query || loading) return;
+    if (!query || loading || streaming) return;
     if (isListening) stopListening();
+
     inputHistory.push(query);
     historyIndex = -1;
     inputDraft = "";
-    if (fadeTimer !== null) {
-      clearTimeout(fadeTimer);
-      fadeTimer = null;
-    }
+
+    // Cancel any running fade timer from previous response
+    if (fadeTimer !== null) { clearTimeout(fadeTimer); fadeTimer = null; }
     responseFading = false;
     navPhraseFading = false;
     input = "";
@@ -190,6 +193,9 @@
 
     loading = true;
     history = [...history, { role: "user", content: query }];
+
+    // Bump generation — any in-flight stream from a previous submit will see the mismatch and bail
+    const gen = ++streamGen;
 
     const abort = new AbortController();
     const timeout = setTimeout(() => abort.abort(), 20000);
@@ -205,7 +211,7 @@
     } catch {
       clearTimeout(timeout);
       loading = false;
-      response = "No response.\n Check your connection and try again.";
+      if (gen === streamGen) response = "No response — check your connection and try again.";
       return;
     }
 
@@ -213,10 +219,11 @@
     loading = false;
 
     if (!res.ok || !res.body) {
-      response = "I'm tired of writing, but you can explore on your own.";
+      if (gen === streamGen) response = "I'm tired of writing, but you can explore on your own.";
       return;
     }
 
+    streaming = true;
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let accumulated = "";
@@ -224,6 +231,9 @@
     let finished = false;
 
     while (!finished) {
+      // Stale stream — a newer submit has taken over
+      if (gen !== streamGen) { reader.cancel(); break; }
+
       const { done, value } = await reader.read();
       if (done) break;
 
@@ -231,15 +241,12 @@
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
         const raw = line.slice(6).trim();
-        if (raw === "[DONE]") {
-          finished = true;
-          break;
-        }
+        if (raw === "[DONE]") { finished = true; break; }
 
         try {
           const parsed = JSON.parse(raw);
           if (parsed.error) {
-            response = "Something went wrong — try again.";
+            if (gen === streamGen) response = "Something went wrong — try again.";
             finished = true;
             break;
           }
@@ -249,11 +256,9 @@
             triggerNavigation(parsed.navigate);
             break;
           }
-          if (parsed.text !== undefined) {
+          if (parsed.text !== undefined && gen === streamGen) {
             accumulated += parsed.text;
-            if (parsed.title && !responseTitle) {
-              responseTitle = parsed.title;
-            }
+            if (parsed.title && !responseTitle) responseTitle = parsed.title;
             const navMatch = accumulated.match(NAV_RE);
             if (navMatch) {
               navigating = true;
@@ -263,13 +268,13 @@
             }
             response = accumulated.replace(/\[NAV[^\]]*$/, "").trimEnd();
           }
-        } catch {
-          /* partial chunk */
-        }
+        } catch { /* partial chunk */ }
       }
     }
 
-    if (!navigating && accumulated) {
+    streaming = false;
+
+    if (!navigating && accumulated && gen === streamGen) {
       history = [...history, { role: "assistant", content: accumulated }];
       fadeTimer = setTimeout(() => {
         responseFading = true;
@@ -278,14 +283,16 @@
           responseTitle = "";
           responseFading = false;
         }, 1500);
-      }, 15000);
+      }, 22000);
     }
   }
 
   function onKeydown(e: KeyboardEvent) {
+    // Any real keystroke while mic is on: hand back control to keyboard
+    if (isListening && e.key !== "ArrowUp" && e.key !== "ArrowDown") stopListening();
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (isListening) stopListening();
       submit();
       return;
     }
