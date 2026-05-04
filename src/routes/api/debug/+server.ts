@@ -1,21 +1,20 @@
 import { json, error } from '@sveltejs/kit';
-import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { ragStore, CV_FULL_CHAR_COUNT } from '$lib/rag/loader';
 import { getTraces, clearTraces } from '$lib/rag/tracer';
 import { retrieve, formatForPrompt } from '$lib/rag/retriever';
 
-function authorized(request: Request): boolean {
-	if (dev) return true;
-	const key = env['DASHBOARD_KEY'];
-	if (!key) return false;
-	const header = request.headers.get('x-dashboard-key');
-	return header === key;
+function authorized(request: Request, url: URL): boolean {
+	const dashKey = env['DASHBOARD_KEY'];
+	if (!dashKey) return false;
+	const fromHeader = request.headers.get('x-dashboard-key');
+	const fromQuery = url.searchParams.get('key');
+	return fromHeader === dashKey || fromQuery === dashKey;
 }
 
-export const GET: RequestHandler = async ({ request }) => {
-	if (!authorized(request)) throw error(403, 'Forbidden');
+export const GET: RequestHandler = async ({ request, url }) => {
+	if (!authorized(request, url)) throw error(403, 'Forbidden');
 
 	const chunks = ragStore.chunks;
 	const traces = getTraces();
@@ -46,8 +45,8 @@ export const GET: RequestHandler = async ({ request }) => {
 	});
 };
 
-export const POST: RequestHandler = async ({ request }) => {
-	if (!authorized(request)) throw error(403, 'Forbidden');
+export const POST: RequestHandler = async ({ request, url }) => {
+	if (!authorized(request, url)) throw error(403, 'Forbidden');
 
 	let body: { query?: string; action?: string };
 	try { body = await request.json(); } catch { throw error(400, 'bad_request'); }

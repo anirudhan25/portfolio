@@ -15,13 +15,17 @@
 		fullCvTokens: number;
 	};
 
+	function authHeaders(): Record<string, string> {
+		return { 'Content-Type': 'application/json', 'x-dashboard-key': data.key };
+	}
+
 	async function runQuery(): Promise<QueryResult | null> {
 		if (!queryInput.trim()) return null;
 		querying = true;
 		try {
 			const res = await fetch('/api/debug', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: authHeaders(),
 				body: JSON.stringify({ query: queryInput }),
 			});
 			return await res.json();
@@ -37,7 +41,7 @@
 	async function clearTraces() {
 		await fetch('/api/debug', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: authHeaders(),
 			body: JSON.stringify({ action: 'clear_traces' }),
 		});
 		location.reload();
