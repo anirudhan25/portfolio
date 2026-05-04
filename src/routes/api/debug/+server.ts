@@ -1,24 +1,45 @@
 import { json, error } from '@sveltejs/kit';
+import { timingSafeEqual } from 'crypto';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import { ragStore, CV_FULL_CHAR_COUNT } from '$lib/rag/loader';
 import { getTraces, clearTraces } from '$lib/rag/tracer';
 import { retrieve, formatForPrompt } from '$lib/rag/retriever';
 
-function authorized(request: Request, url: URL): boolean {
-	const dashKey = env['DASHBOARD_KEY'];
-	if (!dashKey) return false;
-	const fromHeader = request.headers.get('x-dashboard-key');
-	const fromQuery = url.searchParams.get('key');
-	return fromHeader === dashKey || fromQuery === dashKey;
+const COOKIE = 'dash_auth';
+const API_BODY_LIMIT = 512;
+
+// Simple brute-force guard on the debug API
+const debugRateMap = new Map<string, { count: number; reset: number }>();
+function checkDebugRate(ip: string): boolean {
+	const now = Date.now();
+	const rec = debugRateMap.get(ip);
+	if (!rec || now > rec.reset) { debugRateMap.set(ip, { count: 1, reset: now + 60_000 }); return true; }
+	if (rec.count >= 30) return false;
+	rec.count++;
+	return true;
 }
 
-export const GET: RequestHandler = async ({ request, url }) => {
-	if (!authorized(request, url)) throw error(403, 'Forbidden');
+function safeEqual(a: string, b: string): boolean {
+	if (!a || !b || a.length !== b.length) return false;
+	return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
+function authorized(request: Request, cookies: Record<string, string | undefined>): boolean {
+	const dashKey = env['DASHBOARD_KEY'];
+	if (!dashKey) return false;
+	const cookieVal = cookies[COOKIE] ?? '';
+	return safeEqual(cookieVal, dashKey);
+}
+
+export const GET: RequestHandler = async ({ request, cookies, getClientAddress }) => {
+	if (!checkDebugRate(getClientAddress())) throw error(429, 'Too many requests');
+	if (!authorized(request, Object.fromEntries(
+		(request.headers.get('cookie') ?? '').split(';').map(c => { const [k, ...v] = c.trim().split('='); return [k, v.join('=')] })
+	))) throw error(403, 'Forbidden');
 
 	const chunks = ragStore.chunks;
 	const traces = getTraces();
-
 	const totalSaved = traces.reduce((acc, t) => acc + (t.tokens.savedTokens ?? 0), 0);
 	const avgSaved = traces.length ? Math.round(totalSaved / traces.length) : 0;
 
@@ -45,11 +66,21 @@ export const GET: RequestHandler = async ({ request, url }) => {
 	});
 };
 
-export const POST: RequestHandler = async ({ request, url }) => {
-	if (!authorized(request, url)) throw error(403, 'Forbidden');
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+	if (!checkDebugRate(getClientAddress())) throw error(429, 'Too many requests');
+
+	// Cookie auth — read from Cookie header
+	const cookieHeader = request.headers.get('cookie') ?? '';
+	const cookies = Object.fromEntries(
+		cookieHeader.split(';').map(c => { const [k, ...v] = c.trim().split('='); return [k, v.join('=')] })
+	);
+	if (!authorized(request, cookies)) throw error(403, 'Forbidden');
+
+	const rawBody = await request.text();
+	if (rawBody.length > API_BODY_LIMIT) throw error(413, 'too_large');
 
 	let body: { query?: string; action?: string };
-	try { body = await request.json(); } catch { throw error(400, 'bad_request'); }
+	try { body = JSON.parse(rawBody); } catch { throw error(400, 'bad_request'); }
 
 	if (body.action === 'clear_traces') {
 		clearTraces();

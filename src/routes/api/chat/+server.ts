@@ -68,8 +68,14 @@ function isInjection(text: string): boolean {
 }
 
 // ── Input sanitizer ───────────────────────────────────────────────────────────
-function sanitizeInput(text: string): string {
+function normalizeInput(text: string): string {
 	return text
+		.normalize('NFKC')                              // collapse unicode lookalikes
+		.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '');  // strip zero-width / soft-hyphen
+}
+
+function sanitizeInput(text: string): string {
+	return normalizeInput(text)
 		.replace(/<script[\s\S]*?<\/script>/gi, '')
 		.replace(/<[^>]+>/g, '')
 		.replace(/[<>]/g, '')
@@ -88,7 +94,7 @@ PERSONA: first-person, direct, technically confident, casual. Never admit to bei
 FACTS: use only core facts above plus anything in [RETRIEVED]. If a fact is absent from both, say you don't have that detail.
 
 RESPONSE LENGTH — match strictly to the question type:
-• Greeting or small talk (hi, how are you, what's up) → 1 sentence, natural and casual. Example: "Hi, I'm Ani — doing well, what do you want to know?"
+• Greeting or small talk (hi, how are you, what's up) → 1 sentence, natural and casual. Example: "Hi, I'm Ani. I'm doing well, what do you want to know?"
 • Simple factual question → 2-4 sentences max
 • Deep technical question → up to 10 sentences
 Never pad. Never volunteer unrequested information.
@@ -143,30 +149,53 @@ function traceId(): string {
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
-export const POST: RequestHandler = async ({ request }) => {
+const BODY_SIZE_LIMIT = 4096;
+
+export const POST: RequestHandler = async (event) => {
+	const { request } = event;
 	const t0 = Date.now();
 
-	// Rate limiting
-	const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim()
-		?? request.headers.get('x-real-ip')
-		?? 'unknown';
+	// CORS — reject cross-origin requests to protect Groq quota
+	const origin = request.headers.get('origin');
+	if (origin) {
+		const host = request.headers.get('host') ?? '';
+		try {
+			if (new URL(origin).host !== host) {
+				return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+			}
+		} catch {
+			return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 });
+		}
+	}
 
+	// Rate limiting — use SvelteKit's trusted client address, not spoofable XFF
+	const ip = event.getClientAddress();
 	if (!checkRate(ip)) {
 		return sseError("I'm out of ink. Give me a moment.");
+	}
+
+	// Body size cap — prevents DoS via multi-MB JSON before any parsing
+	const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10);
+	if (contentLength > BODY_SIZE_LIMIT) {
+		return new Response(JSON.stringify({ error: 'too_large' }), { status: 413 });
+	}
+	const rawBody = await request.text();
+	if (rawBody.length > BODY_SIZE_LIMIT) {
+		return new Response(JSON.stringify({ error: 'too_large' }), { status: 413 });
 	}
 
 	// Parse & validate
 	let rawMessages: { role: string; content: string }[];
 	try {
-		const body = await request.json();
-		if (!Array.isArray(body.messages)) throw new Error();
+		const body = JSON.parse(rawBody);
+		if (!Array.isArray(body.messages) || body.messages.length > 20) throw new Error();
 		rawMessages = body.messages;
 	} catch {
 		return new Response(JSON.stringify({ error: 'bad_request' }), { status: 400 });
 	}
 
 	const lastUser = [...rawMessages].reverse().find(m => m.role === 'user');
-	if (!lastUser || lastUser.content.trim().length === 0) {
+	if (!lastUser || typeof lastUser.content !== 'string' || lastUser.content.trim().length === 0) {
 		return new Response(JSON.stringify({ error: 'bad_request' }), { status: 400 });
 	}
 	if (lastUser.content.length > 150) {
@@ -211,6 +240,9 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const tGroqStart = Date.now();
 	let stream: AsyncIterable<Groq.Chat.Completions.ChatCompletionChunk>;
+	const abortCtrl = new AbortController();
+	const streamTimeout = setTimeout(() => abortCtrl.abort(), 25_000);
+	request.signal.addEventListener('abort', () => abortCtrl.abort());
 	try {
 		stream = await client.chat.completions.create({
 			model: 'llama-3.1-8b-instant',
@@ -221,9 +253,9 @@ export const POST: RequestHandler = async ({ request }) => {
 			],
 			stream: true,
 			max_tokens: 400
-		});
+		}, { signal: abortCtrl.signal });
 	} catch (err: unknown) {
-		console.error('[chat] groq error:', err);
+		clearTimeout(streamTimeout);
 		const status = (err as { status?: number }).status;
 		if (status === 429) return sseError("The ink needs to settle. Give me a moment.");
 		return new Response(JSON.stringify({ error: 'upstream failure' }), { status: 502 });
@@ -335,12 +367,13 @@ export const POST: RequestHandler = async ({ request }) => {
 					controller.close();
 				}
 
+				clearTimeout(streamTimeout);
 				traceData.latency.stream = Date.now() - tStreamStart;
 				traceData.latency.total = Date.now() - t0;
 				traceData.tokens.outputTokens = Math.ceil(outputChars / 4);
 				addTrace(traceData);
 			} catch (err) {
-				console.error('[chat] stream error:', err);
+				clearTimeout(streamTimeout);
 				send({ error: 'stream interrupted' });
 				controller.enqueue(encoder.encode('data: [DONE]\n\n'));
 				controller.close();
