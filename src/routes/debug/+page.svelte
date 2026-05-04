@@ -60,11 +60,13 @@
 <section style="margin-bottom: 2rem; border: 1px solid #c0b59a; padding: 1rem;">
 	<h2 style="margin: 0 0 0.75rem; font-size: 1rem;">System Status</h2>
 	<table style="border-collapse: collapse; width: 100%; font-size: 0.85rem;">
-		<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Chunks indexed</td><td>{data.chunkCount}</td></tr>
-		<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Full CV tokens (est.)</td><td>{data.fullCvTokens}</td></tr>
-		<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Index built at</td><td>{new Date(data.builtAt).toLocaleString()}</td></tr>
-		<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Traces recorded</td><td>{data.traceCount}</td></tr>
-		<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Avg tokens saved / request</td><td>{data.avgSavedTokens}</td></tr>
+		<tbody>
+			<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Chunks indexed</td><td>{data.chunkCount}</td></tr>
+			<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Full CV tokens (est.)</td><td>{data.fullCvTokens}</td></tr>
+			<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Index built at</td><td>{new Date(data.builtAt).toLocaleString()}</td></tr>
+			<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Traces recorded</td><td>{data.traceCount}</td></tr>
+			<tr><td style="padding: 2px 12px 2px 0; color: #6b5240;">Avg tokens saved / request</td><td>{data.avgSavedTokens}</td></tr>
+		</tbody>
 	</table>
 </section>
 
