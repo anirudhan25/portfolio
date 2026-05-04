@@ -16,47 +16,58 @@
 }
 
 :root {
-	--paper:      #eeede7;
-	--ink:        #1c1008;
-	--ink-mid:    #3d2b18;
-	--ink-fade:   #6b5240;
-	--accent:     #c91616;
+	--paper: #eeede7;
+	--ink: #1c1008;
+	--ink-mid: #3d2b18;
+	--ink-fade: #6b5240;
+	--accent: #c91616;
 }
 
-* { box-sizing: border-box; }
+/* 
+  Wrap the core HTML and Body sizing inside Tailwind's layer base.
+  This guarantees production Vercel builds won't overwrite your scaling!
+*/
+@layer base {
+	* {
+		box-sizing: border-box;
+	}
 
-html {
-	font-size: 108%;
-	/* uneven paper base — slight warmth variation across the page */
-	background:
-		radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
-		radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
-		radial-gradient(ellipse at 50% 50%, #f8f2e2 0%, transparent 80%),
-		#f2ead8;
-	min-height: 100vh;
-	overflow-x: hidden;
-}
-
-@media (max-width: 819px) {
 	html {
+		/* Set to 100% to ensure 1:1 scaling */
 		font-size: 100%;
+		background:
+			radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
+			radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
+			radial-gradient(ellipse at 50% 50%, #f8f2e2 0%, transparent 80%),
+			#f2ead8;
+		min-height: 100vh;
+		overflow-x: hidden;
+	}
+
+	@media (max-width: 819px) {
+		html {
+			font-size: 95%;
+		}
+	}
+
+	body {
+		margin: 0;
+		padding: 0;
+		background: transparent;
+		color: var(--ink);
+		font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+
+		/* Flattened clamp to prevent ballooning on large monitors */
+		font-size: clamp(16px, 1.5vw, 19px);
+
+		line-height: 1.85;
+		min-height: 100vh;
+		position: relative;
+		overflow-x: hidden;
 	}
 }
 
-body {
-	margin: 0;
-	padding: 0;
-	background: transparent;
-	color: var(--ink);
-	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
-	font-size: clamp(17px, 2.2vw, 22px);
-	line-height: 1.85;
-	min-height: 100vh;
-	position: relative;
-	overflow-x: hidden;
-}
-
-/* raised cap — inline, so baseline aligns naturally with the rest of the line */
+/* Keep the rest of your specific classes below... */
 .diary-response::first-letter {
 	font-size: 2em;
 	font-weight: bold;
