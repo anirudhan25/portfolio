@@ -34,7 +34,7 @@
 
 	html {
 		/* Set to 100% to ensure 1:1 scaling */
-		font-size: 90%;
+		font-size: 95%;
 		background:
 			radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
 			radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
