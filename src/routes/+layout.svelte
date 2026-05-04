@@ -12,7 +12,7 @@
 
 <div class="vignette"></div>
 
-<main style="max-width: 580px; margin: 0 auto; padding: 4rem 2.5rem 6rem; position: relative; overflow: visible;">
+<main style="max-width: 580px; margin: 0 auto; padding: 4rem 2.5rem 14rem; position: relative; overflow: visible;">
 	{#key $page.url.pathname}
 		<div in:fade={{ duration: 250, delay: 80 }}>
 			{@render children()}
