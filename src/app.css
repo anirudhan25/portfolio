@@ -36,7 +36,7 @@
 			/* 1. REMOVE the zoom property completely */
 	
 			/* 2. Rely solely on font-size to scale the rem units down safely */
-			font-size: 90% !important;
+			font-size: 100% !important;
 	
 			/* 3. Add this to stop Safari from auto-zooming text on mobile */
 			-webkit-text-size-adjust: 100%;
