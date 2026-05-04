@@ -454,6 +454,8 @@
   {/if}
 </div>
 
+<div class="footer-rule"></div>
+
 {#if speechSupported}
   <button
     class="mic-btn {isListening ? 'mic-btn--listening' : ''}"
