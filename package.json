@@ -9,7 +9,9 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"reindex": "echo 'Index is built at server startup from src/lib/CV.md — restart the dev server to reindex'",
+		"eval": "tsx --tsconfig tsconfig.json scripts/eval.ts"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",
@@ -19,6 +21,7 @@
 		"svelte": "^5.55.2",
 		"svelte-check": "^4.4.6",
 		"tailwindcss": "^4.2.4",
+		"tsx": "^3.14.0",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.7"
 	},
