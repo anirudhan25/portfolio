@@ -306,12 +306,7 @@ export const POST: RequestHandler = async (event) => {
 
 					const navMatch = accumulated.match(NAV_RE);
 					if (navMatch) {
-						const fullBody = accumulated
-							.replace(NAV_RE, '')
-							.replace(/^TITLE:[^\n]*\n?/i, '')
-							.trimEnd();
-						const tail = fullBody.slice(flushedBody.length);
-						if (tail) send({ text: tail, title: titleSent ? undefined : title });
+						// Don't send model's nav preamble — client shows its own nav phrase
 						send({ navigate: navMatch[1] });
 						controller.enqueue(encoder.encode('data: [DONE]\n\n'));
 						controller.close();
@@ -326,10 +321,11 @@ export const POST: RequestHandler = async (event) => {
 
 					if (!titleResolved) {
 						titleBuffer += content;
-						const nlIdx = titleBuffer.indexOf('\n');
+						const trimmedBuf = titleBuffer.trimStart();
+						const nlIdx = trimmedBuf.indexOf('\n');
 						if (nlIdx !== -1) {
-							const firstLine = titleBuffer.slice(0, nlIdx);
-							const bodyStart = titleBuffer.slice(nlIdx + 1);
+							const firstLine = trimmedBuf.slice(0, nlIdx);
+							const bodyStart = trimmedBuf.slice(nlIdx + 1);
 							const titleMatch = firstLine.match(/^TITLE:\s*(.+)$/i);
 							title = titleMatch ? titleMatch[1].trim() : '';
 							titleResolved = true;
@@ -338,11 +334,11 @@ export const POST: RequestHandler = async (event) => {
 								flushedBody += bodyStart;
 								titleSent = true;
 							}
-						} else if (titleBuffer.length > 80) {
+						} else if (trimmedBuf.length > 80) {
 							titleResolved = true;
 							title = '';
-							send({ text: titleBuffer, title: '' });
-							flushedBody += titleBuffer;
+							send({ text: trimmedBuf, title: '' });
+							flushedBody += trimmedBuf;
 							titleSent = true;
 							titleBuffer = '';
 						}
@@ -359,7 +355,7 @@ export const POST: RequestHandler = async (event) => {
 				}
 
 				if (!titleResolved && titleBuffer) {
-					const m = titleBuffer.match(/^TITLE:\s*([^\n]+)\n?([\s\S]*)$/i);
+					const m = titleBuffer.trimStart().match(/^TITLE:\s*([^\n]+)\n?([\s\S]*)$/i);
 					if (m) send({ text: m[2] || '', title: m[1].trim() });
 					else send({ text: titleBuffer, title: '' });
 				}

@@ -21,6 +21,8 @@
 	--ink-mid: #3d2b18;
 	--ink-fade: #6b5240;
 	--accent: #c91616;
+	/* ↓ single knob: change this to scale the whole site up or down */
+	--base-font: 15px;
 }
 
 /* 
@@ -33,28 +35,23 @@
 	}
 
 		html {
-			/* 1. REMOVE the zoom property completely */
-	
-			/* 2. Rely solely on font-size to scale the rem units down safely */
-			font-size: 100% !important;
-	
-			/* 3. Add this to stop Safari from auto-zooming text on mobile */
+			/* Fixed px value — independent of browser/OS default font preferences,
+			   ensuring identical rendering on localhost and Vercel.
+			   To scale the whole site, change --base-font in :root above. */
+			font-size: var(--base-font);
 			-webkit-text-size-adjust: 100%;
-	
-			/* Keep your existing background */
 			background:
 				radial-gradient(ellipse at 15% 10%, #faf7f2 0%, transparent 55%),
 				radial-gradient(ellipse at 85% 85%, #f0e8d4 0%, transparent 55%),
 				radial-gradient(ellipse at 50% 50%, #f8f2e2 0%, transparent 80%),
-				#f2ead8 !important;
-	
+				#f2ead8;
 			min-height: 100vh;
 			overflow-x: hidden;
 		}
 
 	@media (max-width: 819px) {
 		html {
-			font-size: 95%;
+			font-size: calc(var(--base-font) * 0.93);
 		}
 	}
 
@@ -64,10 +61,7 @@
 		background: transparent;
 		color: var(--ink);
 		font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
-
-		/* Flattened clamp to prevent ballooning on large monitors */
-		font-size: clamp(16px, 1.5vw, 19px);
-
+		font-size: 1rem;
 		line-height: 1.85;
 		min-height: 100vh;
 		position: relative;

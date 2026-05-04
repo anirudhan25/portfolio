@@ -253,6 +253,8 @@
           if (parsed.navigate) {
             navigating = true;
             finished = true;
+            response = '';
+            responseTitle = '';
             triggerNavigation(parsed.navigate);
             break;
           }
