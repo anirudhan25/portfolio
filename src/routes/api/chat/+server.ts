@@ -90,8 +90,9 @@ Message: ${query.slice(0, 400)}`
 	return { category: 'safe_chat', model: 'fast' };
 }
 
-const MODEL_FAST     = 'llama-3.1-8b-instant';
-const MODEL_DETAILED = 'llama-3.3-70b-versatile';
+// Fallback chains: primary → secondary → tertiary
+const MODELS_FAST     = ['llama-3.1-8b-instant', 'llama3-8b-8192'];
+const MODELS_DETAILED = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'llama-3.1-8b-instant'];
 
 // ── Injection filter (fast regex pre-check before gatekeeper) ─────────────────
 const INJECTION_PATTERNS: RegExp[] = [
@@ -334,23 +335,36 @@ export const POST: RequestHandler = async (event) => {
 	const abortCtrl = new AbortController();
 	const streamTimeout = setTimeout(() => abortCtrl.abort(), 25_000);
 	request.signal.addEventListener('abort', () => abortCtrl.abort());
-	const chosenModel = gatekeeperResult.model === 'detailed' ? MODEL_DETAILED : MODEL_FAST;
-	try {
-		stream = await client.chat.completions.create({
-			model: chosenModel,
-			messages: [
-				{ role: 'system', content: systemPrompt },
-				...trimmed,
-				{ role: 'system', content: ENFORCER_PROMPT }
-			],
-			stream: true,
-			max_tokens: gatekeeperResult.model === 'detailed' ? 700 : 400
-		}, { signal: abortCtrl.signal });
-	} catch (err: unknown) {
+	const modelChain = gatekeeperResult.model === 'detailed' ? MODELS_DETAILED : MODELS_FAST;
+	const maxTokens  = gatekeeperResult.model === 'detailed' ? 700 : 400;
+	const messages   = [
+		{ role: 'system' as const, content: systemPrompt },
+		...trimmed,
+		{ role: 'system' as const, content: ENFORCER_PROMPT },
+	];
+
+	let lastErr: unknown;
+	for (const model of modelChain) {
+		try {
+			stream = await client.chat.completions.create(
+				{ model, messages, stream: true, max_tokens: maxTokens },
+				{ signal: abortCtrl.signal }
+			);
+			lastErr = undefined;
+			break;
+		} catch (err: unknown) {
+			const status = (err as { status?: number }).status;
+			if (status === 429 || status === 503 || status === 500) {
+				lastErr = err;
+				continue; // try next model in chain
+			}
+			clearTimeout(streamTimeout);
+			return new Response(JSON.stringify({ error: 'upstream failure' }), { status: 502 });
+		}
+	}
+	if (lastErr !== undefined) {
 		clearTimeout(streamTimeout);
-		const status = (err as { status?: number }).status;
-		if (status === 429) return sseError("The ink needs to settle. Give me a moment.");
-		return new Response(JSON.stringify({ error: 'upstream failure' }), { status: 502 });
+		return sseError("The ink needs to settle. Give me a moment.");
 	}
 	const tGroq = Date.now() - tGroqStart;
 
