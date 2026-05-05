@@ -6,6 +6,7 @@ const MAX  = 500;
 export interface QueryRecord {
 	ts:        number;   // unix ms
 	q:         string;   // query text (capped at 200 chars)
+	output:    string;   // LLM response text (capped at 1000 chars, empty if blocked)
 	blocked:   boolean;
 	navigated: boolean;
 	tokensOut: number;

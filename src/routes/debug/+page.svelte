@@ -193,15 +193,26 @@
 	{/if}
 
 	{#each data.queryLog as r}
-	<div style="display:flex; gap:0.75rem; align-items:baseline; font-size:0.83rem; padding:0.25rem 0; border-bottom:1px solid #e8e0d0;">
-		<span style="color:#6b5240; flex-shrink:0; min-width:6rem;">{fmtDate(r.ts)}</span>
-		{#if r.blocked}<span style="color:#c91616; flex-shrink:0;">[BLOCKED]</span>
-		{:else if r.navigated}<span style="color:#888; flex-shrink:0;">[NAV]</span>
-		{:else}<span style="color:#2a7a2a; flex-shrink:0;">[OK]</span>
-		{/if}
-		<span style="color:#3d2b18;">"{r.q}{r.q.length >= 200 ? '…' : ''}"</span>
-		{#if r.tokensOut > 0}<span style="color:#6b5240; flex-shrink:0; margin-left:auto;">{r.tokensOut} tok</span>{/if}
-	</div>
+	<details style="margin-bottom: 0.4rem; border: 1px solid #d4c9b0; padding: 0.4rem 0.5rem;">
+		<summary style="cursor: pointer; font-size: 0.83rem; display: flex; gap: 0.6rem; align-items: baseline; list-style: none;">
+			<span style="color:#6b5240; flex-shrink:0; min-width:6rem;">{fmtDate(r.ts)}</span>
+			{#if r.blocked}<span style="color:#c91616; flex-shrink:0;">[BLOCKED]</span>
+			{:else if r.navigated}<span style="color:#888; flex-shrink:0;">[NAV]</span>
+			{:else}<span style="color:#2a7a2a; flex-shrink:0;">[OK]</span>
+			{/if}
+			<span style="color:#3d2b18; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">"{r.q}{r.q.length >= 200 ? '…' : ''}"</span>
+			{#if r.tokensOut > 0}<span style="color:#6b5240; flex-shrink:0; margin-left:auto;">{r.tokensOut} tok</span>{/if}
+		</summary>
+		<div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e8e0d0; font-size: 0.8rem;">
+			<div style="color:#6b5240; margin-bottom:0.25rem;"><b>Query:</b> {r.q}</div>
+			{#if r.output}
+				<div style="color:#6b5240; margin-bottom:0.25rem;"><b>Response:</b></div>
+				<pre style="margin:0; white-space:pre-wrap; color:#3d2b18; font-family:monospace; font-size:0.78rem; background:#f8f4ec; padding:0.5rem; border:1px solid #e0d5c0;">{r.output}{r.output.length >= 1000 ? '\n…[truncated]' : ''}</pre>
+			{:else}
+				<span style="color:#6b5240; opacity:0.7;">{r.blocked ? 'Blocked — no response generated.' : 'No output recorded.'}</span>
+			{/if}
+		</div>
+	</details>
 	{/each}
 </section>
 
