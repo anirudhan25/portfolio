@@ -45,6 +45,16 @@
 		location.reload();
 	}
 
+	async function clearQueryLog() {
+		await fetch('/api/debug', {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'clear_query_log' }),
+		});
+		location.reload();
+	}
+
 	function fmtMs(n: number) { return n < 1 ? '<1ms' : `${n}ms`; }
 	function fmtDate(ts: number) { return new Date(ts).toLocaleTimeString(); }
 </script>
@@ -163,6 +173,35 @@
 			{/if}
 		</div>
 	</details>
+	{/each}
+</section>
+
+<!-- Persistent query history (Vercel KV) -->
+<section style="margin-bottom: 2rem; border: 1px solid #c0b59a; padding: 1rem;">
+	<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+		<h2 style="margin: 0; font-size: 1rem;">Query History <span style="font-weight:400; color:#6b5240;">(KV — persistent)</span></h2>
+		<button onclick={clearQueryLog} style="font-family: monospace; font-size: 0.78rem; padding: 0.2rem 0.6rem; cursor: pointer; background: none; border: 1px solid #c91616; color: #c91616;">
+			Clear
+		</button>
+	</div>
+
+	{#if data.queryLog.length === 0}
+		<p style="color: #6b5240; font-size: 0.85rem; margin: 0;">
+			No history yet — send a message to the diary to start logging.
+			{#if true}<br><span style="opacity:0.7;">If KV is not set up on Vercel, entries will never appear here.</span>{/if}
+		</p>
+	{/if}
+
+	{#each data.queryLog as r}
+	<div style="display:flex; gap:0.75rem; align-items:baseline; font-size:0.83rem; padding:0.25rem 0; border-bottom:1px solid #e8e0d0;">
+		<span style="color:#6b5240; flex-shrink:0; min-width:6rem;">{fmtDate(r.ts)}</span>
+		{#if r.blocked}<span style="color:#c91616; flex-shrink:0;">[BLOCKED]</span>
+		{:else if r.navigated}<span style="color:#888; flex-shrink:0;">[NAV]</span>
+		{:else}<span style="color:#2a7a2a; flex-shrink:0;">[OK]</span>
+		{/if}
+		<span style="color:#3d2b18;">"{r.q}{r.q.length >= 200 ? '…' : ''}"</span>
+		{#if r.tokensOut > 0}<span style="color:#6b5240; flex-shrink:0; margin-left:auto;">{r.tokensOut} tok</span>{/if}
+	</div>
 	{/each}
 </section>
 

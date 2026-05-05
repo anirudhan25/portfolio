@@ -6,6 +6,7 @@ import { retrieve, formatForPrompt } from '$lib/rag/retriever';
 import { estimateTokens } from '$lib/rag/tokenize';
 import { addTrace } from '$lib/rag/tracer';
 import type { RequestTrace, LatencyTrace, TokenTrace } from '$lib/rag/types';
+import { logQuery } from '$lib/queryLog';
 
 const client = new Groq({ apiKey: GROQ_API_KEY });
 const NAV_RE = /\[NAV:(\/[a-z]*)\]/;
@@ -219,6 +220,7 @@ export const POST: RequestHandler = async (event) => {
 			latency: { sanitize: tSanitize, injectionCheck: tInject, retrieve: 0, promptAssembly: 0, groq: 0, stream: 0, total: Date.now() - t0 },
 			tokens: { systemPromptTokens: 0, retrievedChunkTokens: 0, userMessageTokens: 0, outputTokens: 0, fullCvTokens: Math.ceil(CV_FULL_CHAR_COUNT / 4), savedTokens: 0 },
 		});
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), blocked: true, navigated: false, tokensOut: 0 });
 		return sseError("The pages resist that kind of writing.");
 	}
 	const tInject = Date.now() - tInjectStart;
@@ -272,7 +274,7 @@ export const POST: RequestHandler = async (event) => {
 		blocked: false,
 		latency: { sanitize: tSanitize, injectionCheck: tInject, retrieve: tRetrieve, promptAssembly: tAssembly, groq: tGroq, stream: 0, total: 0 } as LatencyTrace,
 		tokens: { systemPromptTokens, retrievedChunkTokens, userMessageTokens, outputTokens: 0, fullCvTokens, savedTokens: Math.max(0, fullCvTokens - retrievedChunkTokens) } as TokenTrace,
-		navigated: false,
+		navigated: false as boolean,
 	} satisfies RequestTrace;
 
 	const encoder = new TextEncoder();
@@ -316,6 +318,7 @@ export const POST: RequestHandler = async (event) => {
 						traceData.latency.total = Date.now() - t0;
 						traceData.tokens.outputTokens = Math.ceil(outputChars / 4);
 						addTrace(traceData);
+						logQuery({ ts: t0, q: sanitized.slice(0, 200), blocked: false, navigated: true, tokensOut: traceData.tokens.outputTokens });
 						return;
 					}
 
@@ -370,6 +373,7 @@ export const POST: RequestHandler = async (event) => {
 				traceData.latency.total = Date.now() - t0;
 				traceData.tokens.outputTokens = Math.ceil(outputChars / 4);
 				addTrace(traceData);
+				logQuery({ ts: t0, q: sanitized.slice(0, 200), blocked: false, navigated: traceData.navigated, tokensOut: traceData.tokens.outputTokens });
 			} catch (err) {
 				clearTimeout(streamTimeout);
 				send({ error: 'stream interrupted' });
@@ -378,6 +382,7 @@ export const POST: RequestHandler = async (event) => {
 				traceData.latency.stream = Date.now() - tStreamStart;
 				traceData.latency.total = Date.now() - t0;
 				addTrace(traceData);
+				logQuery({ ts: t0, q: sanitized.slice(0, 200), blocked: false, navigated: false, tokensOut: 0 });
 			}
 		}
 	});

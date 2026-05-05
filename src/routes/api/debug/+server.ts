@@ -5,6 +5,7 @@ import type { RequestHandler } from './$types';
 import { ragStore, CV_FULL_CHAR_COUNT } from '$lib/rag/loader';
 import { getTraces, clearTraces } from '$lib/rag/tracer';
 import { retrieve, formatForPrompt } from '$lib/rag/retriever';
+import { clearQueryLog } from '$lib/queryLog';
 
 const COOKIE = 'dash_auth';
 const API_BODY_LIMIT = 512;
@@ -84,6 +85,11 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
 	if (body.action === 'clear_traces') {
 		clearTraces();
+		return json({ ok: true });
+	}
+
+	if (body.action === 'clear_query_log') {
+		await clearQueryLog();
 		return json({ ok: true });
 	}
 

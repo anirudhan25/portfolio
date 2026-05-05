@@ -4,6 +4,7 @@ import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { ragStore, CV_FULL_CHAR_COUNT } from '$lib/rag/loader';
 import { getTraces } from '$lib/rag/tracer';
+import { getQueryLog } from '$lib/queryLog';
 import type { PageServerLoad } from './$types';
 
 function safeEqual(a: string, b: string): boolean {
@@ -37,6 +38,7 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 
 	const traces = getTraces();
 	const totalSaved = traces.reduce((a, t) => a + (t.tokens.savedTokens ?? 0), 0);
+	const queryLog = await getQueryLog(200);
 
 	return {
 		builtAt: ragStore.builtAt,
@@ -54,5 +56,6 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
 		traceCount: traces.length,
 		avgSavedTokens: traces.length ? Math.round(totalSaved / traces.length) : 0,
 		recentTraces: traces.slice(0, 15),
+		queryLog,
 	};
 };
