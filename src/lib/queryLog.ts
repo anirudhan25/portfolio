@@ -4,12 +4,23 @@ const KEY = 'query_log';
 const MAX  = 500;
 
 export interface QueryRecord {
-	ts:        number;   // unix ms
-	q:         string;   // query text (capped at 200 chars)
-	output:    string;   // LLM response text (capped at 1000 chars, empty if blocked)
-	blocked:   boolean;
-	navigated: boolean;
-	tokensOut: number;
+	ts:         number;
+	q:          string;
+	output:     string;
+	blocked:    boolean;
+	navigated:  boolean;
+	tokensOut:  number;
+	// geo + enrichment (optional — older records won't have these)
+	ip?:          string;
+	country?:     string;
+	countryCode?: string;
+	city?:        string;
+	lat?:         number;
+	lng?:         number;
+	category?:    string;   // 'safe_chat' | 'navigation' | 'malicious_injection'
+	modelUsed?:   string;
+	isAdmin?:     boolean;
+	latencyMs?:   number;
 }
 
 export async function logQuery(record: QueryRecord): Promise<void> {

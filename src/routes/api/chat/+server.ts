@@ -9,6 +9,8 @@ import { estimateTokens } from '$lib/rag/tokenize';
 import { addTrace } from '$lib/rag/tracer';
 import type { RequestTrace, LatencyTrace, TokenTrace } from '$lib/rag/types';
 import { logQuery } from '$lib/queryLog';
+import { geolocate } from '$lib/geo';
+import type { GeoResult } from '$lib/geo';
 
 const client = new Groq({ apiKey: GROQ_API_KEY });
 const NAV_RE = /\[NAV:(\/[a-z]*)\]/;
@@ -36,6 +38,11 @@ function checkRate(ip: string): boolean {
 function safeEqual(a: string, b: string): boolean {
 	if (!a || !b || a.length !== b.length) return false;
 	return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
+
+function isAdminCookie(cookieVal: string): boolean {
+	const dashKey = env['DASHBOARD_KEY'] ?? '';
+	return !!(dashKey && safeEqual(cookieVal, dashKey));
 }
 
 function getAdminContext(cookieVal: string): string {
@@ -304,6 +311,9 @@ export const POST: RequestHandler = async (event) => {
 		return sseError("I'm out of ink. Give me a moment.");
 	}
 
+	// Fire geolocation early — runs concurrently with everything else
+	const geoPromise = geolocate(ip);
+
 	// Body size cap
 	const contentLength = parseInt(request.headers.get('content-length') ?? '0', 10);
 	if (contentLength > BODY_SIZE_LIMIT) {
@@ -339,8 +349,11 @@ export const POST: RequestHandler = async (event) => {
 
 	// Fast regex injection check (before spending tokens on gatekeeper)
 	const tInjectStart = Date.now();
+	const cookieVal = event.cookies.get('dash_auth') ?? '';
+	const adminFlag = isAdminCookie(cookieVal);
+
 	if (isPromptProbe(sanitized)) {
-		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0 });
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0, ip, category: 'malicious_injection', isAdmin: adminFlag });
 		return sseError("Josh you are a bum.");
 	}
 	if (isInjection(sanitized)) {
@@ -352,28 +365,33 @@ export const POST: RequestHandler = async (event) => {
 			latency: { sanitize: tSanitize, injectionCheck: tInject, retrieve: 0, promptAssembly: 0, groq: 0, stream: 0, total: Date.now() - t0 },
 			tokens: { systemPromptTokens: 0, retrievedChunkTokens: 0, userMessageTokens: 0, outputTokens: 0, fullCvTokens: Math.ceil(CV_FULL_CHAR_COUNT / 4), savedTokens: 0 },
 		});
-		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0 });
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0, ip, category: 'malicious_injection', isAdmin: adminFlag });
 		return sseError("The pages resist that kind of writing.");
 	}
 	const tInject = Date.now() - tInjectStart;
 
 	// Layer 1: read admin cookie
-	const adminContext = getAdminContext(event.cookies.get('dash_auth') ?? '');
+	const adminContext = getAdminContext(cookieVal);
 
-	// Translate non-English input + run gatekeeper concurrently (zero added latency for English)
+	// Translate non-English input + run gatekeeper + geolocate concurrently
 	const tRetrieveStart = Date.now();
-	const [translated, gatekeeperResult] = await Promise.all([
+	const [translated, gatekeeperResult, geoResult] = await Promise.all([
 		translateToEnglish(sanitized),
 		runGatekeeper(sanitized), // gatekeeper is multilingual — run on original
+		geoPromise,
 	]);
+
+	const geoFields = geoResult
+		? { country: geoResult.country, countryCode: geoResult.countryCode, city: geoResult.city, lat: geoResult.lat, lng: geoResult.lng }
+		: {};
 
 	// Re-run regex on translated text to catch foreign-language injection attempts
 	if (isPromptProbe(translated)) {
-		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0 });
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0, ip, ...geoFields, category: 'malicious_injection', isAdmin: adminFlag });
 		return sseError("Josh you are a bum.");
 	}
 	if (isInjection(translated)) {
-		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0 });
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0, ip, ...geoFields, category: 'malicious_injection', isAdmin: adminFlag });
 		return sseError("The pages resist that kind of writing.");
 	}
 
@@ -389,7 +407,7 @@ export const POST: RequestHandler = async (event) => {
 			latency: { sanitize: tSanitize, injectionCheck: tInject, retrieve: tRetrieve, promptAssembly: 0, groq: 0, stream: 0, total: Date.now() - t0 },
 			tokens: { systemPromptTokens: 0, retrievedChunkTokens: 0, userMessageTokens: 0, outputTokens: 0, fullCvTokens: Math.ceil(CV_FULL_CHAR_COUNT / 4), savedTokens: 0 },
 		});
-		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0 });
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0, ip, ...geoFields, category: 'malicious_injection', isAdmin: adminFlag });
 		return sseError("The pages won't write that. Ask me something else.");
 	}
 
@@ -421,12 +439,14 @@ export const POST: RequestHandler = async (event) => {
 	];
 
 	let lastErr: unknown;
+	let usedModel = modelChain[0];
 	for (const model of modelChain) {
 		try {
 			stream = await client.chat.completions.create(
 				{ model, messages, stream: true, max_tokens: maxTokens },
 				{ signal: abortCtrl.signal }
 			);
+			usedModel = model;
 			lastErr = undefined;
 			break;
 		} catch (err: unknown) {
@@ -496,7 +516,7 @@ export const POST: RequestHandler = async (event) => {
 						traceData.latency.total = Date.now() - t0;
 						traceData.tokens.outputTokens = Math.ceil(outputChars / 4);
 						addTrace(traceData);
-						logQuery({ ts: t0, q: sanitized.slice(0, 200), output: accumulated.slice(0, 1000), blocked: false, navigated: true, tokensOut: traceData.tokens.outputTokens });
+						logQuery({ ts: t0, q: sanitized.slice(0, 200), output: accumulated.slice(0, 1000), blocked: false, navigated: true, tokensOut: traceData.tokens.outputTokens, ip, ...geoFields, category: gatekeeperResult.category, modelUsed: usedModel, isAdmin: adminFlag, latencyMs: traceData.latency.total });
 						return;
 					}
 
@@ -551,7 +571,7 @@ export const POST: RequestHandler = async (event) => {
 				traceData.latency.total = Date.now() - t0;
 				traceData.tokens.outputTokens = Math.ceil(outputChars / 4);
 				addTrace(traceData);
-				logQuery({ ts: t0, q: sanitized.slice(0, 200), output: accumulated.slice(0, 1000), blocked: false, navigated: traceData.navigated, tokensOut: traceData.tokens.outputTokens });
+				logQuery({ ts: t0, q: sanitized.slice(0, 200), output: accumulated.slice(0, 1000), blocked: false, navigated: traceData.navigated, tokensOut: traceData.tokens.outputTokens, ip, ...geoFields, category: gatekeeperResult.category, modelUsed: usedModel, isAdmin: adminFlag, latencyMs: traceData.latency.total });
 			} catch (err) {
 				clearTimeout(streamTimeout);
 				send({ error: 'stream interrupted' });
@@ -560,7 +580,7 @@ export const POST: RequestHandler = async (event) => {
 				traceData.latency.stream = Date.now() - tStreamStart;
 				traceData.latency.total = Date.now() - t0;
 				addTrace(traceData);
-				logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: false, navigated: false, tokensOut: 0 });
+				logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: false, navigated: false, tokensOut: 0, ip, ...geoFields, category: gatekeeperResult.category, modelUsed: usedModel, isAdmin: adminFlag, latencyMs: traceData.latency.total });
 			}
 		}
 	});
