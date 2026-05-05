@@ -553,32 +553,42 @@ nav.folio-nav a:hover {
 
 .diary-rendered li { margin-bottom: 0.25em; }
 
-/* ── code block (dark box in the parchment diary) ── */
+/* ── code block — full editor aesthetic, no paper theming ── */
 .diary-rendered pre.code-block {
-	background: #161b22;
-	border: 1px solid #30363d;
-	border-radius: 4px;
-	padding: 1rem 1.2rem;
-	margin: 1rem 0;
+	background: #0d1117;
+	border: 1px solid #21262d;
+	border-top: 2px solid #388bfd;   /* blue accent bar at top like VS Code */
+	border-radius: 0 0 6px 6px;
+	padding: 1rem 1.25rem;
+	margin: 1.25rem 0;
 	overflow-x: auto;
-	font-size: 0.82rem;
-	line-height: 1.6;
+	font-size: 0.8rem;
+	line-height: 1.65;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+	scrollbar-width: thin;
+	scrollbar-color: #30363d #0d1117;
 }
 
+.diary-rendered pre.code-block::-webkit-scrollbar { height: 5px; }
+.diary-rendered pre.code-block::-webkit-scrollbar-track { background: #0d1117; }
+.diary-rendered pre.code-block::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
 .diary-rendered pre.code-block code {
-	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	font-family: 'SFMono-Regular', 'Cascadia Code', Consolas, 'Liberation Mono', Menlo, monospace;
 	background: none;
 	padding: 0;
 	border: none;
 	color: #e6edf3;
+	letter-spacing: 0.01em;
 }
 
-/* inline code */
+/* inline code — neutral dark pill, no parchment colors */
 .diary-rendered code:not(.hljs) {
-	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-	background: rgba(28, 16, 8, 0.08);
-	color: var(--ink-mid);
-	padding: 0.1em 0.35em;
-	border-radius: 3px;
-	font-size: 0.88em;
+	font-family: 'SFMono-Regular', 'Cascadia Code', Consolas, 'Liberation Mono', Menlo, monospace;
+	background: #1c2128;
+	color: #79c0ff;
+	border: 1px solid #21262d;
+	padding: 0.1em 0.4em;
+	border-radius: 4px;
+	font-size: 0.83em;
 }
