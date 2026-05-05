@@ -1,6 +1,29 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { onMount, onDestroy } from "svelte";
+  import { marked } from "marked";
+  import { markedHighlight } from "marked-highlight";
+  import hljs from "highlight.js";
+
+  // Configure marked once: custom renderer wraps code blocks in our dark-box class
+  marked.use(
+    markedHighlight({
+      langPrefix: "hljs language-",
+      highlight(code: string, lang: string) {
+        const language = hljs.getLanguage(lang) ? lang : "plaintext";
+        return hljs.highlight(code, { language }).value;
+      },
+    })
+  );
+  marked.use({
+    renderer: {
+      code({ text, lang }: { text: string; lang?: string }) {
+        const language = lang && hljs.getLanguage(lang) ? lang : "plaintext";
+        const highlighted = hljs.highlight(text, { language }).value;
+        return `<pre class="code-block"><code class="hljs language-${language}">${highlighted}</code></pre>`;
+      },
+    },
+  });
 
   type Message = { role: "user" | "assistant"; content: string };
 
@@ -8,6 +31,7 @@
   let response = $state("");
   let responseTitle = $state("");
   let navPhrase = $state("");
+  let renderedHtml = $state("");      // populated post-stream via marked
   let loading = $state(false);
   let history: Message[] = $state([]);
   let morphChar = $state("_");
@@ -189,6 +213,7 @@
     input = "";
     response = "";
     responseTitle = "";
+    renderedHtml = "";
     navPhrase = "";
 
     loading = true;
@@ -278,11 +303,14 @@
 
     if (!navigating && accumulated && gen === streamGen) {
       history = [...history, { role: "assistant", content: accumulated }];
+      // Render markdown post-stream (no flicker — raw text was shown during streaming)
+      renderedHtml = await marked.parse(response);
       fadeTimer = setTimeout(() => {
         responseFading = true;
         setTimeout(() => {
           response = "";
           responseTitle = "";
+          renderedHtml = "";
           responseFading = false;
         }, 1500);
       }, 22000);
@@ -418,13 +446,18 @@
           {responseTitle}
         </p>
       {/if}
-      {#if response}
+      {#if renderedHtml && !streaming}
+        <!-- Post-stream: full markdown with dark code blocks -->
+        <div
+          class="diary-rendered {responseFading ? 'fading' : ''}"
+          bind:this={responseEl}
+        >{@html renderedHtml}</div>
+      {:else if response}
+        <!-- During stream: raw text, no flicker -->
         <p
           class="diary-response {responseFading ? 'fading' : ''}"
           bind:this={responseEl}
-        >
-          {response}
-        </p>
+        >{response}</p>
       {/if}
       {#if navPhrase}
         <p class="nav-phrase {navPhraseFading ? 'fading' : ''}">{navPhrase}</p>

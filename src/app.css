@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Fuzzy+Bubbles:wght@400;700&family=Special+Elite&display=swap');
 @import 'tailwindcss';
+@import 'highlight.js/styles/github-dark.min.css';
 
 @font-face {
 	font-family: 'IM Fell DW Pica';
@@ -518,4 +519,66 @@ nav.folio-nav a:hover {
 
 	filter: grayscale(100%) sepia(20%) contrast(0.9) brightness(0.95);
 	mix-blend-mode: multiply;
+}
+
+/* ── rendered markdown (post-stream) ── */
+.diary-rendered {
+	font-family: 'IM Fell DW Pica', 'EB Garamond', Georgia, serif;
+	color: var(--ink);
+	font-size: 1.25rem;
+	line-height: 1.85;
+	transition: opacity 1.5s ease;
+}
+
+.diary-rendered.fading {
+	opacity: 0;
+}
+
+.diary-rendered p {
+	margin: 0 0 0.75em 0;
+}
+
+.diary-rendered p:last-child {
+	margin-bottom: 0;
+}
+
+.diary-rendered strong { font-weight: 700; }
+.diary-rendered em    { font-style: italic; }
+
+.diary-rendered ul,
+.diary-rendered ol {
+	margin: 0.5em 0 0.75em 1.5em;
+	padding: 0;
+}
+
+.diary-rendered li { margin-bottom: 0.25em; }
+
+/* ── code block (dark box in the parchment diary) ── */
+.diary-rendered pre.code-block {
+	background: #161b22;
+	border: 1px solid #30363d;
+	border-radius: 4px;
+	padding: 1rem 1.2rem;
+	margin: 1rem 0;
+	overflow-x: auto;
+	font-size: 0.82rem;
+	line-height: 1.6;
+}
+
+.diary-rendered pre.code-block code {
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	background: none;
+	padding: 0;
+	border: none;
+	color: #e6edf3;
+}
+
+/* inline code */
+.diary-rendered code:not(.hljs) {
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	background: rgba(28, 16, 8, 0.08);
+	color: var(--ink-mid);
+	padding: 0.1em 0.35em;
+	border-radius: 3px;
+	font-size: 0.88em;
 }
