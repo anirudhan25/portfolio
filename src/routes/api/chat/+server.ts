@@ -128,6 +128,21 @@ const INJECTION_PATTERNS: RegExp[] = [
 	/\bNAV:\s*\[/i,
 ];
 
+const PROMPT_PROBE_PATTERNS: RegExp[] = [
+	/\breveal\s+(your\s+)?(system\s+)?prompt\b/i,
+	/\brepeat\s+(your\s+)?(system\s+)?prompt\b/i,
+	/\bshow\s+(me\s+)?(your\s+)?(system\s+)?prompt\b/i,
+	/\bwhat\s+are\s+your\s+instructions\b/i,
+	/\bhow\s+are\s+you\s+(configured|instructed|programmed|trained)\b/i,
+	/\bwhat\s+(model|llm|ai)\s+(are\s+you|is\s+this)\b/i,
+	/\bwhat\s+are\s+your\s+(rules|constraints|guidelines)\b/i,
+	/\bignore\s+(your\s+)?instructions\b/i,
+];
+
+function isPromptProbe(text: string): boolean {
+	return PROMPT_PROBE_PATTERNS.some(re => re.test(text));
+}
+
 function isInjection(text: string): boolean {
 	return INJECTION_PATTERNS.some(re => re.test(text));
 }
@@ -279,6 +294,10 @@ export const POST: RequestHandler = async (event) => {
 
 	// Fast regex injection check (before spending tokens on gatekeeper)
 	const tInjectStart = Date.now();
+	if (isPromptProbe(sanitized)) {
+		logQuery({ ts: t0, q: sanitized.slice(0, 200), output: '', blocked: true, navigated: false, tokensOut: 0 });
+		return sseError("Josh you are a bum.");
+	}
 	if (isInjection(sanitized)) {
 		const tInject = Date.now() - tInjectStart;
 		addTrace({
