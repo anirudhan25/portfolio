@@ -1,0 +1,266 @@
+/* MayurGPT — design tokens borrowed from Monet (warm cream canvas, terracotta accent, hairline warm borders).
+ * Everything is scoped under .mg so the diary pages are untouched. Sizes are px on purpose: the diary sets
+ * html { font-size } to its own scale, so rem would drift. */
+
+html.mg-lock,
+html.mg-lock body {
+	overflow: hidden;
+	overscroll-behavior: none;
+	background: var(--mg-page-bg, #fbfaf7);
+}
+
+/* the diary's paper grain lives on body::before/::after; MayurGPT is plain */
+html.mg-lock body::before,
+html.mg-lock body::after {
+	display: none;
+}
+
+.mg {
+	--bg: #fbfaf7;
+	--bg-sidebar: #f4f2eb;
+	--bg-raised: #efece3;
+	--bg-hover: rgba(32, 30, 26, 0.05);
+	--bg-active: rgba(32, 30, 26, 0.08);
+	--surface: #ffffff;
+	--border: #e9e6dd;
+	--border-strong: #dcd7ca;
+	--text: #201e1a;
+	--text-muted: #6d6960;
+	--text-faint: #9b968b;
+	--accent: #c05b2e;
+	--accent-hover: #a94e26;
+	--accent-fg: #ffffff;
+	--accent-soft: #f7e9e1;
+	--user-bubble: #efebe1;
+	--danger: #b3261e;
+	--danger-soft: #fbeae8;
+	--scrim: rgba(32, 30, 26, 0.32);
+	--shadow-card: 0 1px 3px rgb(32 30 26 / 0.05), 0 4px 12px rgb(32 30 26 / 0.04);
+	--shadow-composer: 0 1px 2px rgb(32 30 26 / 0.04), 0 6px 24px -6px rgb(32 30 26 / 0.12);
+	--shadow-pop: 0 2px 8px rgb(32 30 26 / 0.08), 0 12px 28px rgb(32 30 26 / 0.12);
+	--font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	html.mg-lock {
+		--mg-page-bg: #1a1917;
+	}
+	.mg {
+		--bg: #1a1917;
+		--bg-sidebar: #141311;
+		--bg-raised: #262420;
+		--bg-hover: rgba(236, 234, 228, 0.06);
+		--bg-active: rgba(236, 234, 228, 0.1);
+		--surface: #24221e;
+		--border: #34312b;
+		--border-strong: #45413a;
+		--text: #eceae4;
+		--text-muted: #a29d92;
+		--text-faint: #77736a;
+		--accent: #e07a4a;
+		--accent-hover: #e98d61;
+		--accent-fg: #1d130c;
+		--accent-soft: rgba(224, 122, 74, 0.14);
+		--user-bubble: #2e2b26;
+		--danger: #f2877d;
+		--danger-soft: rgba(242, 135, 125, 0.12);
+		--scrim: rgba(0, 0, 0, 0.5);
+		--shadow-card: 0 1px 3px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.25);
+		--shadow-composer: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 28px -8px rgb(0 0 0 / 0.5);
+		--shadow-pop: 0 2px 8px rgb(0 0 0 / 0.4), 0 12px 28px rgb(0 0 0 / 0.45);
+		color-scheme: dark;
+	}
+}
+
+.mg {
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: var(--mg-vtop, 0px);
+	height: var(--mg-vh, 100dvh);
+	display: flex;
+	overflow: hidden;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-sans);
+	font-size: 15px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mg *,
+.mg *::before,
+.mg *::after {
+	box-sizing: border-box;
+}
+
+.mg button,
+.mg input,
+.mg textarea {
+	font: inherit;
+	color: inherit;
+	letter-spacing: inherit;
+}
+
+.mg button {
+	cursor: pointer;
+	background: none;
+	border: 0;
+	padding: 0;
+}
+
+.mg button:disabled {
+	cursor: default;
+}
+
+.mg a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.mg :focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+/* text fields show focus through their own border instead */
+.mg textarea:focus-visible,
+.mg input:focus-visible {
+	outline: none;
+}
+
+.mg ::selection {
+	background: var(--accent-soft);
+}
+
+.mg ::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+.mg ::-webkit-scrollbar-track {
+	background: transparent;
+}
+.mg ::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 3px;
+}
+.mg ::-webkit-scrollbar-thumb:hover {
+	background: var(--text-faint);
+}
+
+/* shared bits used by several components */
+.mg .icon-btn {
+	display: inline-grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	color: var(--text-muted);
+	transition:
+		background 150ms var(--ease),
+		color 150ms var(--ease);
+}
+.mg .icon-btn:hover:not(:disabled) {
+	background: var(--bg-hover);
+	color: var(--text);
+}
+.mg .icon-btn:disabled {
+	opacity: 0.4;
+}
+
+.mg .pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 36px;
+	padding: 0 16px;
+	border-radius: 9999px;
+	font-size: 14px;
+	font-weight: 500;
+	transition:
+		background 150ms var(--ease),
+		border-color 150ms var(--ease),
+		opacity 150ms var(--ease);
+}
+.mg .pill-accent {
+	background: var(--accent);
+	color: var(--accent-fg);
+}
+.mg .pill-accent:hover:not(:disabled) {
+	background: var(--accent-hover);
+}
+.mg .pill-outline {
+	border: 1px solid var(--border-strong);
+	background: var(--surface);
+}
+.mg .pill-outline:hover:not(:disabled) {
+	background: var(--bg-hover);
+}
+.mg .pill-danger {
+	background: var(--danger);
+	color: #fff;
+}
+.mg .pill:disabled {
+	opacity: 0.45;
+}
+
+.mg .field {
+	width: 100%;
+	height: 40px;
+	padding: 0 14px;
+	border-radius: 10px;
+	border: 1px solid var(--border-strong);
+	background: var(--surface);
+	font-size: 16px; /* 16px stops iOS zooming into the field */
+	outline: none;
+	transition: border-color 150ms var(--ease);
+}
+.mg .field:focus {
+	border-color: var(--accent);
+}
+
+.mg .menu {
+	position: absolute;
+	z-index: 40;
+	min-width: 180px;
+	padding: 4px;
+	border-radius: 12px;
+	border: 1px solid var(--border);
+	background: var(--surface);
+	box-shadow: var(--shadow-pop);
+	font-size: 14px;
+}
+.mg .menu button {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: 8px;
+	text-align: left;
+}
+.mg .menu button:hover {
+	background: var(--bg-hover);
+}
+.mg .menu .danger {
+	color: var(--danger);
+}
+
+.mg dialog {
+	color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.mg *,
+	.mg *::before,
+	.mg *::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

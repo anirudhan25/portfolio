@@ -1,6 +1,12 @@
-import type { Handle } from '@sveltejs/kit';
+import { redirect, type Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
+	// /mayurgpt, /MAYURGPT/... → /MayurGPT/... (friends will type it however they like)
+	const path = event.url.pathname;
+	if (/^\/mayurgpt(\/|$)/i.test(path) && !path.startsWith('/MayurGPT')) {
+		redirect(308, '/MayurGPT' + path.slice('/mayurgpt'.length) + event.url.search);
+	}
+
 	const response = await resolve(event);
 
 	// Security headers on all responses
