@@ -24,7 +24,6 @@
 
 <div class="thinking">
 	<button class="row" class:active onclick={() => (open = !open)} aria-expanded={open}>
-		{#if active}<span class="spinner" aria-hidden="true"></span>{/if}
 		<span class="label" class:shimmer={active}>{label}</span>
 		<span class="chev" class:open><Icon name="down" size={15} /></span>
 	</button>
@@ -66,15 +65,6 @@
 	.chev.open {
 		transform: rotate(180deg);
 	}
-	.spinner {
-		width: 13px;
-		height: 13px;
-		border-radius: 50%;
-		border: 1.75px solid var(--border-strong);
-		border-top-color: var(--accent);
-		animation: spin 0.8s linear infinite;
-		flex-shrink: 0;
-	}
 	.shimmer {
 		background: linear-gradient(90deg, var(--text-muted) 0%, var(--text-muted) 40%, var(--text) 50%, var(--text-muted) 60%, var(--text-muted) 100%);
 		background-size: 250% 100%;
@@ -97,11 +87,6 @@
 	}
 	.empty {
 		color: var(--text-faint);
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
 	}
 	@keyframes shimmer {
 		from {

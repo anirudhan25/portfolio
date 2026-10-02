@@ -8,7 +8,7 @@
 	import ChatView from '$lib/mayur/components/ChatView.svelte';
 	import Icon from '$lib/mayur/components/Icon.svelte';
 	import InviteScreen from '$lib/mayur/components/InviteScreen.svelte';
-	import Mark from '$lib/mayur/components/Mark.svelte';
+	import Mark, { HEAD } from '$lib/mayur/components/Mark.svelte';
 	import Settings from '$lib/mayur/components/Settings.svelte';
 	import Sidebar from '$lib/mayur/components/Sidebar.svelte';
 
@@ -97,11 +97,6 @@
 		}
 	}
 
-	const FAVICON =
-		'data:image/svg+xml,' +
-		encodeURIComponent(
-			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M8 2h16a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H13l-6 4v-4.3A6 6 0 0 1 2 20V8a6 6 0 0 1 6-6Z" fill="#c05b2e"/><path d="M9 20v-6.2a2.8 2.8 0 0 1 5.6 0V20m0-6.2a2.8 2.8 0 0 1 5.6 0V20" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23.6" cy="19.6" r="1.6" fill="#fff"/></svg>'
-		);
 </script>
 
 <svelte:head>
@@ -112,7 +107,8 @@
 	<meta property="og:type" content="website" />
 	<meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
 	<meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)" />
-	<link rel="icon" href={FAVICON} />
+	<link rel="icon" type="image/png" href={HEAD} />
+	<link rel="apple-touch-icon" href={HEAD} />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 	<link

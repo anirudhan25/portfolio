@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { MayurApp } from '../app.svelte';
 	import type { ThreadItem } from '../tree';
+	import Avatar from './Avatar.svelte';
 	import Branches from './Branches.svelte';
 	import CopyButton from './CopyButton.svelte';
 	import Icon from './Icon.svelte';
@@ -15,48 +16,51 @@
 	// a reply is a burst of texts: one per line of content
 	const parts = $derived(msg.content.split('\n').filter((l) => l.trim()));
 	const thinkingActive = $derived(pending && !!msg.thinking && msg.thinking.seconds == null && !msg.content);
-	const waiting = $derived(pending && !msg.content && !msg.preface && !msg.thinking && state !== 'queued');
 	const writing = $derived(pending && state === 'writing');
 	const failed = $derived(msg.status === 'error' || !!msg.error);
 	const temp = $derived(msg.id.startsWith('tmp-'));
+	const avatar = $derived(!pending ? 'idle' : state === 'queued' ? 'queued' : 'busy');
 </script>
 
 <div class="assistant" class:pending>
-	{#if state === 'queued' && pending && !msg.content}
-		<p class="queue">
-			Mayur's replying to someone else…{#if msg.live?.position}&nbsp;({msg.live.position} ahead){/if}
-		</p>
-	{/if}
+	<div class="row">
+		<div class="gutter">{#if isLast}<Avatar state={avatar} />{/if}</div>
+		<div class="content">
+			{#if state === 'queued' && pending && !msg.content}
+				<p class="queue">
+					Mayur's replying to someone else…{#if msg.live?.position}&nbsp;({msg.live.position} ahead){/if}
+				</p>
+			{/if}
 
-	{#if msg.preface}
-		<p class="text">{msg.preface}</p>
-	{/if}
+			{#if msg.preface}
+				<p class="text">{msg.preface}</p>
+			{/if}
 
-	{#if msg.thinking}
-		<Thinking thinking={msg.thinking} active={thinkingActive} />
-	{/if}
+			{#if msg.thinking}
+				<Thinking thinking={msg.thinking} active={thinkingActive} />
+			{/if}
 
-	{#each parts as part, i (i)}
-		<p class="text">{part}{#if writing && i === parts.length - 1}<span class="caret" aria-hidden="true"></span>{/if}</p>
-	{/each}
+			{#each parts as part, i (i)}
+				<p class="text">{part}{#if writing && i === parts.length - 1}<span class="caret" aria-hidden="true"></span>{/if}</p>
+			{/each}
 
-	{#if waiting}
-		<div class="dots" aria-label="Mayur is typing"><span></span><span></span><span></span></div>
-	{:else if writing && !parts.length && !thinkingActive}
-		<p class="text"><span class="caret" aria-hidden="true"></span></p>
-	{/if}
+			{#if writing && !parts.length && !thinkingActive}
+				<p class="text"><span class="caret" aria-hidden="true"></span></p>
+			{/if}
 
-	{#if failed}
-		<div class="error" role="alert">
-			<Icon name="alert" size={16} />
-			<span>{msg.error || "Mayur couldn't reply to this one."}</span>
-			{#if !pending && !temp}
-				<button class="pill pill-outline" disabled={app.busy} onclick={() => app.retry(msg.id)}>
-					<Icon name="retry" size={14} /> Retry
-				</button>
+			{#if failed}
+				<div class="error" role="alert">
+					<Icon name="alert" size={16} />
+					<span>{msg.error || "Mayur couldn't reply to this one."}</span>
+					{#if !pending && !temp}
+						<button class="pill pill-outline" disabled={app.busy} onclick={() => app.retry(msg.id)}>
+							<Icon name="retry" size={14} /> Retry
+						</button>
+					{/if}
+				</div>
 			{/if}
 		</div>
-	{/if}
+	</div>
 
 	{#if !pending && !temp}
 		<div class="actions" class:last={isLast}>
@@ -74,9 +78,37 @@
 
 <style>
 	.assistant {
+		--gutter: 40px;
 		margin: 8px 0 4px;
 		font-size: 16px;
 		line-height: 1.6;
+	}
+	.row {
+		display: flex;
+	}
+	/* Mayur's head sits beside the newest line, like a group chat */
+	.gutter {
+		width: var(--gutter);
+		flex-shrink: 0;
+		display: flex;
+		align-items: flex-end;
+		padding-bottom: 4px;
+	}
+	.content {
+		flex: 1;
+		min-width: 0;
+		min-height: 34px;
+	}
+	@media (max-width: 767px) {
+		.assistant {
+			--gutter: 36px;
+		}
+	}
+	/* when there's room, the head hangs in the margin so Mayur's text lines up with the composer */
+	@container chat (min-width: 860px) {
+		.assistant {
+			margin-left: calc(-1 * var(--gutter));
+		}
 	}
 	.text {
 		margin: 0 0 6px;
@@ -99,24 +131,6 @@
 		background: var(--accent);
 		border-radius: 1px;
 		animation: blink 1s steps(1) infinite;
-	}
-	.dots {
-		display: inline-flex;
-		gap: 4px;
-		padding: 10px 0;
-	}
-	.dots span {
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background: var(--text-faint);
-		animation: bounce 1.2s var(--ease) infinite;
-	}
-	.dots span:nth-child(2) {
-		animation-delay: 0.15s;
-	}
-	.dots span:nth-child(3) {
-		animation-delay: 0.3s;
 	}
 	.error {
 		display: flex;
@@ -144,7 +158,7 @@
 		display: flex;
 		align-items: center;
 		gap: 2px;
-		margin-left: -6px;
+		margin-left: calc(var(--gutter) - 6px);
 		opacity: 0;
 		transition: opacity 150ms var(--ease);
 	}
@@ -170,18 +184,6 @@
 	@keyframes blink {
 		50% {
 			opacity: 0;
-		}
-	}
-	@keyframes bounce {
-		0%,
-		60%,
-		100% {
-			transform: translateY(0);
-			opacity: 0.5;
-		}
-		30% {
-			transform: translateY(-4px);
-			opacity: 1;
 		}
 	}
 	@keyframes rise {

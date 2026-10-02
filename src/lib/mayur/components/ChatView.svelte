@@ -127,6 +127,7 @@
 		overflow-x: hidden;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable both-edges;
+		container: chat / inline-size;
 	}
 	.column {
 		width: 100%;
