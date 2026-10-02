@@ -7,7 +7,9 @@
 </script>
 
 <svelte:head>
-	<title>Anirudhan Vijay</title>
+	{#if !$page.url.pathname.startsWith('/MayurGPT')}
+		<title>Anirudhan Vijay</title>
+	{/if}
 </svelte:head>
 
 <!-- MayurGPT is a full-screen app with its own chrome; it skips the diary's page frame and transitions -->
