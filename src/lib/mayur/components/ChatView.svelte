@@ -159,8 +159,8 @@
 		letter-spacing: -0.01em;
 	}
 	.hero-head {
-		width: 1.25em;
-		height: 1.25em;
+		width: 1.5em;
+		height: 1.5em;
 		object-fit: contain;
 		flex-shrink: 0;
 	}

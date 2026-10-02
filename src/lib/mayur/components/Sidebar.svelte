@@ -115,7 +115,7 @@
 		</button>
 		<a class="brand" href={BASE} onclick={navigated}>
 			<Mark size={26} />
-			<span>MayurGPT</span>
+			<span>Mayur</span>
 		</a>
 	</div>
 

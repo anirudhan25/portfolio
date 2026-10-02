@@ -132,9 +132,9 @@
 </script>
 
 <svelte:head>
-	<title>{title ? `${title} · MayurGPT` : 'MayurGPT'}</title>
+	<title>{title ? `${title} · Mayur` : 'Mayur'}</title>
 	<meta name="description" content="Text Mayur, whenever." />
-	<meta property="og:title" content="MayurGPT" />
+	<meta property="og:title" content="Mayur" />
 	<meta property="og:description" content="Text Mayur, whenever." />
 	<meta property="og:type" content="website" />
 	<meta name="theme-color" content="#fbfaf7" media="(prefers-color-scheme: light)" />
@@ -231,7 +231,7 @@
 							{/if}
 						</div>
 					{:else if mobile}
-						<span class="brand"><Mark size={22} /> MayurGPT</span>
+						<span class="brand"><Mark size={22} /> Mayur</span>
 					{/if}
 				</div>
 				{#if mobile}

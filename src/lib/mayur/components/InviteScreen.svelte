@@ -19,7 +19,7 @@
 <div class="wrap">
 	<form class="card" onsubmit={submit}>
 		<Mark size={44} />
-		<h1>MayurGPT</h1>
+		<h1>Mayur</h1>
 		{#if mode === 'invite'}
 			<p>You need an invite code to text Mayur. Ask Anirudhan for one.</p>
 			<input class="field" bind:value={code} placeholder="Invite code" autocomplete="off" spellcheck="false" aria-label="Invite code" />
@@ -50,7 +50,7 @@
 				app.inviteError = null;
 			}}
 		>
-			{mode === 'invite' ? 'Already use MayurGPT on another device?' : 'I have an invite code'}
+			{mode === 'invite' ? 'Already texting Mayur on another device?' : 'I have an invite code'}
 		</button>
 	</form>
 </div>

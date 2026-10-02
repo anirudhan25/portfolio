@@ -73,7 +73,7 @@
 	{/if}
 
 	{#if isLast}
-		<div class="head"><Avatar state={avatar} size={40} /></div>
+		<div class="head"><Avatar state={avatar} size={52} /></div>
 	{/if}
 </div>
 
@@ -86,7 +86,7 @@
 	}
 	/* Mayur's head under his newest reply, where Claude puts its spark */
 	.head {
-		margin: 14px 0 4px -2px;
+		margin: 16px 0 4px -4px;
 	}
 	.text {
 		margin: 0 0 6px;
