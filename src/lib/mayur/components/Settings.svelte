@@ -159,7 +159,7 @@
 		gap: 8px;
 		margin: 0 0 8px;
 		font-size: 14px;
-		font-weight: 600;
+		font-weight: 500;
 	}
 	.muted {
 		margin: 0 0 10px;
@@ -203,7 +203,7 @@
 	.code-text {
 		font-family: var(--font-mono);
 		font-size: 24px;
-		font-weight: 600;
+		font-weight: 400;
 		letter-spacing: 0.14em;
 		user-select: all;
 	}

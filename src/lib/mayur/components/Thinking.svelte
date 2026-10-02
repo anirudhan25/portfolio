@@ -37,6 +37,7 @@
 <style>
 	.thinking {
 		margin: 2px 0 10px;
+		font-family: var(--font-sans);
 	}
 	.row {
 		display: inline-flex;

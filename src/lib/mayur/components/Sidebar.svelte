@@ -30,6 +30,33 @@
 	const starred = $derived(app.conversations.filter((c) => c.starred));
 	const recents = $derived(app.conversations.filter((c) => !c.starred));
 
+	// Recents grouped by day, like Claude: Today, Yesterday, then "Sep 30"
+	function dayLabel(iso: string) {
+		const d = new Date(iso);
+		const today = new Date();
+		const days = Math.round(
+			(new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() -
+				new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) /
+				86400000
+		);
+		if (days <= 0) return 'Today';
+		if (days === 1) return 'Yesterday';
+		return d.toLocaleDateString(undefined, {
+			month: 'short',
+			day: 'numeric',
+			...(d.getFullYear() !== today.getFullYear() ? { year: 'numeric' } : {})
+		});
+	}
+	const groups = $derived.by(() => {
+		const out: { label: string; items: Conversation[] }[] = [];
+		for (const c of recents) {
+			const label = dayLabel(c.updated_at);
+			if (out[out.length - 1]?.label === label) out[out.length - 1].items.push(c);
+			else out.push({ label, items: [c] });
+		}
+		return out;
+	});
+
 	// debounced search
 	$effect(() => {
 		const query = q.trim();
@@ -72,29 +99,35 @@
 		confirmOpen = true;
 	}
 
-	const initial = $derived((app.user?.name?.trim() || 'You').charAt(0).toUpperCase());
+	const initials = $derived(
+		(app.user?.name?.trim() || 'You')
+			.split(/\s+/)
+			.slice(0, 2)
+			.map((w) => w.charAt(0).toUpperCase())
+			.join('')
+	);
 </script>
 
 <aside class="sidebar">
 	<div class="head">
+		<button class="icon-btn" aria-label={mobile ? 'Close sidebar' : 'Collapse sidebar'} onclick={onclose}>
+			<Icon name={mobile ? 'x' : 'sidebar'} />
+		</button>
 		<a class="brand" href={BASE} onclick={navigated}>
 			<Mark size={26} />
 			<span>MayurGPT</span>
 		</a>
-		<button class="icon-btn" aria-label={mobile ? 'Close sidebar' : 'Collapse sidebar'} onclick={onclose}>
-			<Icon name={mobile ? 'x' : 'sidebar'} />
-		</button>
 	</div>
 
-	<button class="new" onclick={onnewchat}>
-		<span class="new-icon"><Icon name="newChat" size={16} /></span>
-		New chat
-	</button>
-
 	<label class="search">
-		<Icon name="search" size={16} />
-		<input type="search" placeholder="Search chats" bind:value={q} aria-label="Search chats" />
+		<Icon name="search" size={17} />
+		<input type="search" placeholder="Search" bind:value={q} aria-label="Search chats" />
 	</label>
+
+	<button class="new" onclick={onnewchat}>
+		<span class="new-icon"><Icon name="plus" size={16} /></span>
+		New
+	</button>
 
 	<nav class="list" bind:this={list} aria-label="Chats">
 		{#if results !== null || searching}
@@ -115,12 +148,13 @@
 					<ChatRow {app} conv={c} ondelete={askDelete} onnavigate={navigated} />
 				{/each}
 			{/if}
-			{#if recents.length}
-				<h3>Recents</h3>
-				{#each recents as c (c.id)}
+			{#each groups as g (g.label)}
+				<h3>{g.label}</h3>
+				{#each g.items as c (c.id)}
 					<ChatRow {app} conv={c} ondelete={askDelete} onnavigate={navigated} />
 				{/each}
-			{:else if app.phase === 'ready' && !starred.length}
+			{/each}
+			{#if !recents.length && app.phase === 'ready' && !starred.length}
 				<p class="empty">Your chats with Mayur will show up here.</p>
 			{/if}
 			{#if app.hasMore}
@@ -130,9 +164,9 @@
 	</nav>
 
 	<button class="me" onclick={onsettings} disabled={app.phase !== 'ready'}>
-		<span class="avatar">{initial}</span>
+		<span class="avatar">{initials}</span>
 		<span class="me-name">{app.user?.name || 'You'}</span>
-		<Icon name="up" size={16} />
+		<Icon name="down" size={16} />
 	</button>
 </aside>
 
@@ -168,15 +202,15 @@
 	.head {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 2px 2px 10px 8px;
+		gap: 6px;
+		padding: 2px 4px 12px 2px;
 	}
 	.brand {
 		display: flex;
 		align-items: center;
-		gap: 9px;
+		gap: 8px;
 		font-family: var(--font-serif);
-		font-size: 23px;
+		font-size: 22px;
 		line-height: 1;
 		letter-spacing: -0.01em;
 	}
@@ -185,10 +219,10 @@
 		align-items: center;
 		gap: 10px;
 		height: 38px;
+		margin-top: 6px;
 		padding: 0 8px;
 		border-radius: 9px;
-		font-size: 14px;
-		font-weight: 500;
+		font-size: 15px;
 		transition: background 150ms var(--ease);
 	}
 	.new:hover {
@@ -200,17 +234,17 @@
 		width: 24px;
 		height: 24px;
 		border-radius: 9999px;
-		background: var(--accent);
-		color: var(--accent-fg);
+		background: var(--bg-active);
+		color: var(--text);
 	}
 	.search {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		height: 36px;
-		margin: 6px 0 4px;
-		padding: 0 10px;
-		border-radius: 9px;
+		gap: 9px;
+		height: 38px;
+		margin: 0;
+		padding: 0 12px;
+		border-radius: 10px;
 		border: 1px solid var(--border);
 		background: var(--surface);
 		color: var(--text-muted);
@@ -245,12 +279,11 @@
 		padding: 0 4px 12px;
 	}
 	h3 {
-		margin: 16px 0 4px;
+		margin: 18px 0 4px;
 		padding: 0 10px;
 		color: var(--text-faint);
-		font-size: 12px;
-		font-weight: 500;
-		letter-spacing: 0.02em;
+		font-size: 13px;
+		font-weight: 400;
 	}
 	.empty {
 		margin: 8px 10px;
@@ -285,10 +318,10 @@
 		width: 30px;
 		height: 30px;
 		border-radius: 9999px;
-		background: var(--text);
-		color: var(--bg);
-		font-size: 13px;
-		font-weight: 600;
+		border: 1px solid var(--border-strong);
+		background: var(--bg-raised);
+		color: var(--text);
+		font-size: 12px;
 		flex-shrink: 0;
 	}
 	.me-name {
@@ -298,8 +331,7 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 		color: var(--text);
-		font-size: 14px;
-		font-weight: 500;
+		font-size: 15px;
 	}
 	.confirm-text {
 		margin: 0 0 18px;

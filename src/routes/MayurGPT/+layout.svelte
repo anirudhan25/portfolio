@@ -1,11 +1,12 @@
 <script lang="ts">
 	import '$lib/mayur/mayur.css';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { BASE, MayurApp } from '$lib/mayur/app.svelte';
 	import ChatView from '$lib/mayur/components/ChatView.svelte';
+	import Dialog from '$lib/mayur/components/Dialog.svelte';
 	import Icon from '$lib/mayur/components/Icon.svelte';
 	import InviteScreen from '$lib/mayur/components/InviteScreen.svelte';
 	import Mark, { HEAD } from '$lib/mayur/components/Mark.svelte';
@@ -25,6 +26,37 @@
 	let root = $state<HTMLElement>();
 
 	const title = $derived(app.current?.conv.title || '');
+	const conv = $derived(app.current?.conv ?? null);
+
+	// the title dropdown in the header (like Claude's): star, rename, delete
+	let titleMenu = $state(false);
+	let renaming = $state(false);
+	let renameText = $state('');
+	let renameInput = $state<HTMLInputElement>();
+	let confirmDelete = $state(false);
+
+	async function startRename() {
+		titleMenu = false;
+		renameText = title;
+		renaming = true;
+		await tick();
+		renameInput?.select();
+	}
+
+	function commitRename() {
+		if (!renaming) return;
+		renaming = false;
+		const t = renameText.trim();
+		if (conv && t && t !== title) app.patchConversation(conv.id, { title: t });
+	}
+
+	function outside(node: HTMLElement) {
+		const close = (e: Event) => {
+			if (!node.contains(e.target as Node)) titleMenu = false;
+		};
+		document.addEventListener('pointerdown', close, true);
+		return { destroy: () => document.removeEventListener('pointerdown', close, true) };
+	}
 
 	$effect(() => {
 		app.setCurrent(page.params.cid ?? null);
@@ -109,12 +141,7 @@
 	<meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)" />
 	<link rel="icon" type="image/png" href={HEAD} />
 	<link rel="apple-touch-icon" href={HEAD} />
-	<link rel="preconnect" href="https://fonts.googleapis.com" />
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-	<link
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap"
-	/>
+	<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous" />
 </svelte:head>
 
 <svelte:window {onkeydown} />
@@ -153,8 +180,56 @@
 					<button class="icon-btn" aria-label="Open sidebar" onclick={() => (drawer = true)}><Icon name="menu" /></button>
 				{/if}
 				<div class="title">
-					{#if title}
-						<span>{title}</span>
+					{#if renaming}
+						<input
+							class="rename"
+							bind:this={renameInput}
+							bind:value={renameText}
+							maxlength="120"
+							aria-label="Chat title"
+							onblur={commitRename}
+							onkeydown={(e) => {
+								if (e.key === 'Enter') commitRename();
+								if (e.key === 'Escape') renaming = false;
+							}}
+						/>
+					{:else if title && conv}
+						<div class="title-wrap" use:outside>
+							<button
+								class="title-btn"
+								aria-haspopup="menu"
+								aria-expanded={titleMenu}
+								onclick={() => (titleMenu = !titleMenu)}
+							>
+								<span>{title}</span>
+								<Icon name="down" size={16} />
+							</button>
+							{#if titleMenu}
+								<div class="menu title-menu" role="menu" transition:fade={{ duration: 120 }}>
+									<button
+										role="menuitem"
+										onclick={() => {
+											titleMenu = false;
+											app.patchConversation(conv.id, { starred: !conv.starred });
+										}}
+									>
+										<Icon name="star" size={16} filled={conv.starred} />
+										{conv.starred ? 'Unstar' : 'Star'}
+									</button>
+									<button role="menuitem" onclick={startRename}><Icon name="pencil" size={16} /> Rename</button>
+									<button
+										role="menuitem"
+										class="danger"
+										onclick={() => {
+											titleMenu = false;
+											confirmDelete = true;
+										}}
+									>
+										<Icon name="trash" size={16} /> Delete
+									</button>
+								</div>
+							{/if}
+						</div>
 					{:else if mobile}
 						<span class="brand"><Mark size={22} /> MayurGPT</span>
 					{/if}
@@ -181,6 +256,21 @@
 			<ChatView {app} />
 		</main>
 		<Settings {app} bind:open={settingsOpen} />
+		<Dialog bind:open={confirmDelete} title="Delete chat?">
+			<p class="confirm-text">“{title || 'New chat'}” will be deleted for good, along with every message in it.</p>
+			<div class="confirm-actions">
+				<button class="pill pill-outline" onclick={() => (confirmDelete = false)}>Cancel</button>
+				<button
+					class="pill pill-danger"
+					onclick={() => {
+						if (conv) app.deleteConversation(conv.id);
+						confirmDelete = false;
+					}}
+				>
+					Delete
+				</button>
+			</div>
+		</Dialog>
 	{/if}
 </div>
 
@@ -262,25 +352,74 @@
 		display: flex;
 		align-items: center;
 		color: var(--text);
-		font-size: 14.5px;
-		font-weight: 500;
+		font-size: 15.5px;
 	}
-	.title > span {
+	.title-wrap {
+		position: relative;
+		min-width: 0;
+	}
+	.title-btn {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		max-width: 100%;
+		height: 34px;
+		padding: 0 8px;
+		border-radius: 8px;
+		transition: background 150ms var(--ease);
+	}
+	.title-btn:hover,
+	.title-btn[aria-expanded='true'] {
+		background: var(--bg-hover);
+	}
+	.title-btn span {
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+	}
+	.title-btn :global(svg) {
+		color: var(--text-muted);
+	}
+	.title-menu {
+		left: 0;
+		top: calc(100% + 4px);
+	}
+	.rename {
+		width: min(420px, 100%);
+		height: 34px;
+		padding: 0 10px;
+		border-radius: 8px;
+		border: 1px solid var(--accent);
+		background: var(--surface);
+		font-size: 16px;
+		outline: none;
+	}
+	.confirm-text {
+		margin: 0 0 18px;
+		color: var(--text-muted);
+		font-size: 14.5px;
+		overflow-wrap: anywhere;
+	}
+	.confirm-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
 	}
 	.brand {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
 		font-family: var(--font-serif);
-		font-size: 21px;
+		font-size: 20px;
 		font-weight: 400;
 	}
 	@media (max-width: 767px) {
 		.title {
 			justify-content: center;
+		}
+		.title-menu {
+			left: 50%;
+			transform: translateX(-50%);
 		}
 	}
 	.banner {

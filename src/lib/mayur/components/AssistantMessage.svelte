@@ -23,43 +23,40 @@
 </script>
 
 <div class="assistant" class:pending>
-	<div class="row">
-		<div class="gutter">{#if isLast}<Avatar state={avatar} />{/if}</div>
-		<div class="content">
-			{#if state === 'queued' && pending && !msg.content}
-				<p class="queue">
-					Mayur's replying to someone else…{#if msg.live?.position}&nbsp;({msg.live.position} ahead){/if}
-				</p>
-			{/if}
+	<div class="content">
+		{#if state === 'queued' && pending && !msg.content}
+			<p class="queue">
+				Mayur's replying to someone else…{#if msg.live?.position}&nbsp;({msg.live.position} ahead){/if}
+			</p>
+		{/if}
 
-			{#if msg.preface}
-				<p class="text">{msg.preface}</p>
-			{/if}
+		{#if msg.preface}
+			<p class="text">{msg.preface}</p>
+		{/if}
 
-			{#if msg.thinking}
-				<Thinking thinking={msg.thinking} active={thinkingActive} />
-			{/if}
+		{#if msg.thinking}
+			<Thinking thinking={msg.thinking} active={thinkingActive} />
+		{/if}
 
-			{#each parts as part, i (i)}
-				<p class="text">{part}{#if writing && i === parts.length - 1}<span class="caret" aria-hidden="true"></span>{/if}</p>
-			{/each}
+		{#each parts as part, i (i)}
+			<p class="text">{part}{#if writing && i === parts.length - 1}<span class="caret" aria-hidden="true"></span>{/if}</p>
+		{/each}
 
-			{#if writing && !parts.length && !thinkingActive}
-				<p class="text"><span class="caret" aria-hidden="true"></span></p>
-			{/if}
+		{#if writing && !parts.length && !thinkingActive}
+			<p class="text"><span class="caret" aria-hidden="true"></span></p>
+		{/if}
 
-			{#if failed}
-				<div class="error" role="alert">
-					<Icon name="alert" size={16} />
-					<span>{msg.error || "Mayur couldn't reply to this one."}</span>
-					{#if !pending && !temp}
-						<button class="pill pill-outline" disabled={app.busy} onclick={() => app.retry(msg.id)}>
-							<Icon name="retry" size={14} /> Retry
-						</button>
-					{/if}
-				</div>
-			{/if}
-		</div>
+		{#if failed}
+			<div class="error" role="alert">
+				<Icon name="alert" size={16} />
+				<span>{msg.error || "Mayur couldn't reply to this one."}</span>
+				{#if !pending && !temp}
+					<button class="pill pill-outline" disabled={app.busy} onclick={() => app.retry(msg.id)}>
+						<Icon name="retry" size={14} /> Retry
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	{#if !pending && !temp}
@@ -74,41 +71,22 @@
 			<Branches {app} {item} {locked} />
 		</div>
 	{/if}
+
+	{#if isLast}
+		<div class="head"><Avatar state={avatar} size={40} /></div>
+	{/if}
 </div>
 
 <style>
 	.assistant {
-		--gutter: 40px;
 		margin: 8px 0 4px;
-		font-size: 16px;
-		line-height: 1.6;
+		font-family: var(--font-reply);
+		font-size: 17px;
+		line-height: 1.65;
 	}
-	.row {
-		display: flex;
-	}
-	/* Mayur's head sits beside the newest line, like a group chat */
-	.gutter {
-		width: var(--gutter);
-		flex-shrink: 0;
-		display: flex;
-		align-items: flex-end;
-		padding-bottom: 4px;
-	}
-	.content {
-		flex: 1;
-		min-width: 0;
-		min-height: 34px;
-	}
-	@media (max-width: 767px) {
-		.assistant {
-			--gutter: 36px;
-		}
-	}
-	/* when there's room, the head hangs in the margin so Mayur's text lines up with the composer */
-	@container chat (min-width: 860px) {
-		.assistant {
-			margin-left: calc(-1 * var(--gutter));
-		}
+	/* Mayur's head under his newest reply, where Claude puts its spark */
+	.head {
+		margin: 14px 0 4px -2px;
 	}
 	.text {
 		margin: 0 0 6px;
@@ -119,8 +97,8 @@
 	.queue {
 		margin: 0 0 6px;
 		color: var(--text-muted);
+		font-family: var(--font-sans);
 		font-size: 14px;
-		font-style: italic;
 	}
 	.caret {
 		display: inline-block;
@@ -142,6 +120,7 @@
 		border-radius: 12px;
 		background: var(--danger-soft);
 		color: var(--danger);
+		font-family: var(--font-sans);
 		font-size: 14px;
 	}
 	.error span {
@@ -158,7 +137,8 @@
 		display: flex;
 		align-items: center;
 		gap: 2px;
-		margin-left: calc(var(--gutter) - 6px);
+		margin-left: -6px;
+		font-family: var(--font-sans);
 		opacity: 0;
 		transition: opacity 150ms var(--ease);
 	}

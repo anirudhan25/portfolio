@@ -2,11 +2,38 @@
  * Everything is scoped under .mg so the diary pages are untouched. Sizes are px on purpose: the diary sets
  * html { font-size } to its own scale, so rem would drift. */
 
+/* Anthropic Sans / Serif / Mono, from a community re-host on jsDelivr (pinned to v1.1.0 so it can't change
+ * under us). Only the weights the app uses are declared, so only those files download. */
+@font-face {
+	font-family: 'Anthropic Sans';
+	src: url('https://cdn.jsdelivr.net/gh/devchauhann/fonts@v1.1.0/cdn/v1/fonts/AnthropicSans@400.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Anthropic Sans';
+	src: url('https://cdn.jsdelivr.net/gh/devchauhann/fonts@v1.1.0/cdn/v1/fonts/AnthropicSans@500.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Anthropic Serif';
+	src: url('https://cdn.jsdelivr.net/gh/devchauhann/fonts@v1.1.0/cdn/v1/fonts/AnthropicSerif@400.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Anthropic Mono';
+	src: url('https://cdn.jsdelivr.net/gh/devchauhann/fonts@v1.1.0/cdn/v1/fonts/AnthropicMono@400.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+
 html.mg-lock,
 html.mg-lock body {
 	overflow: hidden;
 	overscroll-behavior: none;
-	background: var(--mg-page-bg, #fbfaf7);
+	background: var(--mg-page-bg, #faf9f5);
 }
 
 /* the diary's paper grain lives on body::before/::after; MayurGPT is plain */
@@ -16,8 +43,8 @@ html.mg-lock body::after {
 }
 
 .mg {
-	--bg: #fbfaf7;
-	--bg-sidebar: #f4f2eb;
+	--bg: #faf9f5;
+	--bg-sidebar: #f5f4ef;
 	--bg-raised: #efece3;
 	--bg-hover: rgba(32, 30, 26, 0.05);
 	--bg-active: rgba(32, 30, 26, 0.08);
@@ -38,9 +65,11 @@ html.mg-lock body::after {
 	--shadow-card: 0 1px 3px rgb(32 30 26 / 0.05), 0 4px 12px rgb(32 30 26 / 0.04);
 	--shadow-composer: 0 1px 2px rgb(32 30 26 / 0.04), 0 6px 24px -6px rgb(32 30 26 / 0.12);
 	--shadow-pop: 0 2px 8px rgb(32 30 26 / 0.08), 0 12px 28px rgb(32 30 26 / 0.12);
-	--font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-	--font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
-	--font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+	--font-sans: 'Anthropic Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-serif: 'Anthropic Serif', Georgia, 'Times New Roman', serif;
+	--font-mono: 'Anthropic Mono', ui-monospace, Menlo, monospace;
+	/* Mayur's replies, like Claude's responses; set to var(--font-sans) for sans replies */
+	--font-reply: var(--font-serif);
 	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 	color-scheme: light;
 }
@@ -88,6 +117,7 @@ html.mg-lock body::after {
 	color: var(--text);
 	font-family: var(--font-sans);
 	font-size: 15px;
+	font-weight: 400;
 	line-height: 1.55;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -182,7 +212,7 @@ html.mg-lock body::after {
 	padding: 0 16px;
 	border-radius: 9999px;
 	font-size: 14px;
-	font-weight: 500;
+	font-weight: 400;
 	transition:
 		background 150ms var(--ease),
 		border-color 150ms var(--ease),

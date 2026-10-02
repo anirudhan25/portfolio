@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import type { MayurApp } from '../app.svelte';
-	import { FOOTNOTE, greeting, SUGGESTIONS } from '../copy';
+	import { SUGGESTIONS, WELCOME } from '../copy';
 	import { buildThread } from '../tree';
 	import AssistantMessage from './AssistantMessage.svelte';
 	import Composer from './Composer.svelte';
 	import Icon from './Icon.svelte';
+	import { HEAD } from './Mark.svelte';
 	import UserMessage from './UserMessage.svelte';
 
 	let { app }: { app: MayurApp } = $props();
@@ -13,13 +14,11 @@
 	let scroller = $state<HTMLElement>();
 	let pinned = $state(true);
 	let composer = $state<ReturnType<typeof Composer>>();
-	let nameDraft = $state('');
 
 	const chat = $derived(app.current);
 	const items = $derived(chat ? buildThread(chat.messages, chat.conv.current_leaf_id) : []);
 	const empty = $derived(!app.currentId || (!!chat && items.length === 0));
 	const locked = $derived(!!chat?.streaming);
-	const hello = $derived(greeting(app.user?.name));
 
 	function onscroll() {
 		if (!scroller) return;
@@ -56,21 +55,7 @@
 	<div class="scroll" bind:this={scroller} {onscroll}>
 		{#if empty}
 			<div class="hero" in:fade={{ duration: 200 }}>
-				<h1>{hello}</h1>
-				{#if app.phase === 'ready' && app.user && !app.user.name}
-					<form
-						class="name"
-						onsubmit={(e) => {
-							e.preventDefault();
-							if (nameDraft.trim()) app.setName(nameDraft);
-						}}
-					>
-						<div class="name-box">
-							<input bind:value={nameDraft} maxlength="60" placeholder="What should Mayur call you?" aria-label="Your name" />
-							{#if nameDraft.trim()}<button class="name-save" aria-label="Save name"><Icon name="check" size={16} /></button>{/if}
-						</div>
-					</form>
-				{/if}
+				<h1><img class="hero-head" src={HEAD} alt="" />{WELCOME}</h1>
 			</div>
 		{:else if app.loadingChat && !chat}
 			<div class="column loading"><span class="spinner"></span></div>
@@ -107,7 +92,6 @@
 					{/each}
 				</div>
 			{/if}
-			<p class="note">{FOOTNOTE}</p>
 		</div>
 	</div>
 </div>
@@ -127,7 +111,6 @@
 		overflow-x: hidden;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable both-edges;
-		container: chat / inline-size;
 	}
 	.column {
 		width: 100%;
@@ -165,51 +148,21 @@
 		text-align: center;
 	}
 	h1 {
+		display: inline-flex;
+		align-items: center;
+		gap: 14px;
 		margin: 0;
 		font-family: var(--font-serif);
-		font-size: clamp(36px, 8vw, 46px);
+		font-size: clamp(32px, 7vw, 40px);
 		font-weight: 400;
-		line-height: 1.1;
+		line-height: 1.15;
 		letter-spacing: -0.01em;
-		overflow-wrap: anywhere;
 	}
-	.name {
-		display: flex;
-		justify-content: center;
-		margin-top: 14px;
-	}
-	.name-box {
-		position: relative;
-		width: min(320px, 100%);
-	}
-	.name input {
-		width: 100%;
-		height: 38px;
-		padding: 0 38px;
-		border-radius: 9999px;
-		border: 1px solid var(--border);
-		background: var(--surface);
-		outline: none;
-		font-size: 16px;
-		text-align: center;
-	}
-	.name input:focus {
-		border-color: var(--border-strong);
-	}
-	.name input::placeholder {
-		color: var(--text-faint);
-	}
-	.name-save {
-		position: absolute;
-		top: 4px;
-		right: 4px;
-		display: grid;
-		place-items: center;
-		width: 30px;
-		height: 30px;
-		border-radius: 9999px;
-		background: var(--accent);
-		color: var(--accent-fg);
+	.hero-head {
+		width: 1.25em;
+		height: 1.25em;
+		object-fit: contain;
+		flex-shrink: 0;
 	}
 	@media (min-width: 768px) {
 		.view.empty {
@@ -248,7 +201,7 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: 8px;
-		margin-top: 14px;
+		margin-top: 10px;
 	}
 	.chip {
 		height: 34px;
@@ -269,12 +222,6 @@
 	}
 	.chip:disabled {
 		opacity: 0.5;
-	}
-	.note {
-		margin: 8px 0 0;
-		color: var(--text-faint);
-		font-size: 12px;
-		text-align: center;
 	}
 	.jump {
 		position: absolute;

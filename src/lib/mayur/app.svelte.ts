@@ -51,7 +51,7 @@ export class MayurApp {
 	async boot(url: URL) {
 		try {
 			const s = localStorage.getItem(SMART_KEY);
-			if (s === 'on' || s === 'off' || s === 'auto') this.smart = s;
+			if (s === 'on' || s === 'auto') this.smart = s;
 		} catch {
 			/* storage blocked */
 		}

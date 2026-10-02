@@ -130,7 +130,7 @@
 		gap: 8px;
 		height: 100%;
 		padding: 0 4px 0 10px;
-		font-size: 14px;
+		font-size: 15px;
 	}
 	.title {
 		flex: 1;

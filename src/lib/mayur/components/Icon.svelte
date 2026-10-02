@@ -24,7 +24,9 @@
 		bulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
 		phone: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
 		logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
-		alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>'
+		alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+		plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+		enter: '<path d="M20 5v6a4 4 0 0 1-4 4H5"/><path d="m9 19-4-4 4-4"/>'
 	} as const;
 	export type IconName = keyof typeof PATHS;
 </script>
@@ -39,7 +41,7 @@
 	viewBox="0 0 24 24"
 	fill={filled ? 'currentColor' : 'none'}
 	stroke="currentColor"
-	stroke-width="1.75"
+	stroke-width="1.5"
 	stroke-linecap="round"
 	stroke-linejoin="round"
 	aria-hidden="true"
